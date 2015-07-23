@@ -68,7 +68,7 @@ $> whosonfirst.py -p neighbourhood -b 37.763251,-122.424002,37.768476,-122.41786
 
 ## Importing data
 
-There is already a handy `import.py` script (for importing a directory full of files) and basically all it is doing is this:
+There is already a handy `import.py` script for importing a directory full of files (like say, maybe... [whosonfirst-data](https://github.com/mapzen/whosonfirst-data)) and basically all it is doing is this:
 
 ```
 import whosonfirst
