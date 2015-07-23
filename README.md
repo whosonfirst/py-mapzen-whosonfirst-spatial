@@ -91,7 +91,7 @@ _Something something something about PostGIS schemas and geometry types. Yeah, t
 On the server-side:
 
 ```
-$> export DSN='...'
+$> export WOF_LOOKUP_DSN='...'
 $> ./scripts/server.py -v 
 INFO:werkzeug: * Running on http://127.0.0.1:8888/
 INFO:werkzeug:127.0.0.1 - - [23/Jul/2015 20:39:13] "GET /?bbox=37.763251,-122.424002,37.768476,-122.417865&placetype=country HTTP/1.1" 200 -
