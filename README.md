@@ -152,6 +152,8 @@ $> curl 'http://localhost:8888/?bbox=37.763251,-122.424002,37.768476,-122.417865
     }
   ], 
   "type": "FeatureCollection"
+}
+```
 
 ## Caveats
 
