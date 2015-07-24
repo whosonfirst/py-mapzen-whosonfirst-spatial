@@ -104,6 +104,10 @@ $> whosonfirst.py -p neighbourhood -b 37.763251,-122.424002,37.768476,-122.41786
 85865951 Mission Dolores
 ```
 
+### Lookup by TMS tile address
+
+This just requires writing some hoop-jumping around Migurski's [whereami.py](https://github.com/migurski/whereami) code to convert a `Z/X/Y` tile address in to a bounding box and then invoke `get_by_extent`. In the meantime _you_ could just write some hoop-jumping code of your around Migurski's [whereami.py](https://github.com/migurski/whereami) code... to convert a `Z/X/Y` tile address in to a bounding box.
+
 ## Fancy-pants HTTP pony lookups
 
 See also: [ops-mapzen-whosonfirst-lookup](https://github.com/mapzen/ops-mapzen-whosonfirst-lookup) for a fancier gunicorn/nginx version of this.
