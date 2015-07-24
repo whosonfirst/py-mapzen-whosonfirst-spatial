@@ -34,7 +34,7 @@ if __name__ == '__main__':
     dsn = "dbname=%s user=%s" % (options.database, options.username)
     db = whosonfirst.lookup(dsn)
 
-    source = os.path.asbpath(source)
+    source = os.path.abspath(source)
     crawl = mapzen.whosonfirst.utils.crawl(source, inflate=True)
 
     for feature in crawl:
