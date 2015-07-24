@@ -2,6 +2,44 @@
 
 "lookup"?  I don't know. Something. Also I can't be bothered to make myself sad and angry sorting out Python namespaces right now. I will, just not today...
 
+## Importing data
+
+There is already a handy `import.py` script for importing a directory full of files (like say, maybe... [whosonfirst-data](https://github.com/mapzen/whosonfirst-data)) and basically all it is doing is this:
+
+```
+import whosonfirst
+import mapzen.whosonfirst.utils
+
+dsn = "..."
+db = whosonfirst.lookup(dsn)
+
+source = os.path.asbpath(source)
+crawl = mapzen.whosonfirst.utils.crawl(source, inflate=True)
+
+for feature in crawl:
+	db.import_feature(feature)
+```
+
+### PostGIS
+
+```
+$> sudo apt-get install postgresql-9.3 postgresql-client postgis postgresql-9.3-postgis-scripts python-psycopg2
+$> sudo su -m postgres
+$> createdb whosonfirst_pip
+$> psql -d whosonfirst_pip -c "CREATE EXTENSION postgis;"
+$> psql -d whosonfirst_pip -c "CREATE EXTENSION postgis_topology;"
+$> psql -d whosonfirst
+gazetteer=# CREATE TABLE whosonfirst (id BIGINT PRIMARY KEY, placetype VARCHAR, properties TEXT, geom GEOGRAPHY(MULTIPOLYGON, 4326));
+CREATE INDEX by_geom ON whosonfirst USING GIST(geom);
+CREATE INDEX by_placetype ON whosonfirst (placetype);
+VACUUM ANALYZE;
+```
+
+#### Caveates
+
+* This schema assumes `MULTIPOLYGON` geometries so 1) the import tools will convert single geometries to... mutli-geometries and 2) it will not work with point data (aka venues)
+* The example above (and the code) still assume a database called `whosonfirst_pip` instead of something more sensible like `whosonfirst_lookup`. One thing at a time...
+
 ## Usage
 
 ### Basic
@@ -65,26 +103,6 @@ $> whosonfirst.py -p neighbourhood -b 37.763251,-122.424002,37.768476,-122.41786
 85887467 The Hub
 85865951 Mission Dolores
 ```
-
-## Importing data
-
-There is already a handy `import.py` script for importing a directory full of files (like say, maybe... [whosonfirst-data](https://github.com/mapzen/whosonfirst-data)) and basically all it is doing is this:
-
-```
-import whosonfirst
-import mapzen.whosonfirst.utils
-
-dsn = "..."
-db = whosonfirst.lookup(dsn)
-
-source = os.path.asbpath(source)
-crawl = mapzen.whosonfirst.utils.crawl(source, inflate=True)
-
-for feature in crawl:
-	db.import_feature(feature)
-```
-
-_Something something something about PostGIS schemas and geometry types. Yeah, that..._
 
 ## Fancy-pants HTTP pony lookups
 
