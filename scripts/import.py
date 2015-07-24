@@ -34,10 +34,11 @@ if __name__ == '__main__':
     dsn = "dbname=%s user=%s" % (options.database, options.username)
     db = whosonfirst.lookup(dsn)
 
-    source = os.path.abspath(source)
+    source = os.path.abspath(options.source)
     crawl = mapzen.whosonfirst.utils.crawl(source, inflate=True)
 
     for feature in crawl:
+        logging.debug("import feature %s" % feature.get('id', "UNKNOWN"))
         db.import_feature(feature)
 
     sys.exit()

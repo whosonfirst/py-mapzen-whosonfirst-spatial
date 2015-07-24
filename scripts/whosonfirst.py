@@ -70,7 +70,7 @@ class lookup:
         except psycopg2.IntegrityError, e:
 
             try:
-                conn.rollback()
+                self.conn.rollback()
             
                 sql = "UPDATE whosonfirst SET placetype=%s, properties=%s, geom=ST_GeomFromGeoJSON(%s) WHERE id=%s"
                 params = (placetype, str_props, str_geom, id)
@@ -83,7 +83,7 @@ class lookup:
             except Exception, e:
                 self.conn.rollback()
                 logging.error("failed to update WOF:ID %s, because %s" % (id, e))
-                logging.error(data)
+                logging.error(feature)
                 return False
 
                 # raise Exception, e
