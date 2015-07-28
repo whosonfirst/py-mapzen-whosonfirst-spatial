@@ -35,7 +35,7 @@ CREATE INDEX by_placetype ON whosonfirst (placetype);
 VACUUM ANALYZE;
 ```
 
-#### Caveates
+#### Caveats
 
 * This schema assumes `MULTIPOLYGON` geometries so 1) the import tools will convert single geometries to... mutli-geometries and 2) it will not work with point data (aka venues)
 * The example above (and the code) still assume a database called `whosonfirst_pip` instead of something more sensible like `whosonfirst_lookup`. One thing at a time...

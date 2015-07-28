@@ -116,6 +116,22 @@ class lookup:
         self.cache.set(cache_key, row)
         return row
 
+    def get_by_latlon_recursive(self, lat, lon, **kwargs):
+
+        placetypes = kwargs.get('placetypes', [])
+        places = 0
+
+        for p in placetypes:
+            
+            rsp = self.get_by_latlon(lat, lon, placetype=p)
+
+            for row in rsp:
+                places += 1
+                yield row
+
+            if places > 0:
+                break
+                
     def get_by_latlon(self, lat, lon, **kwargs):
 
         where = []

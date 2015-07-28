@@ -32,8 +32,14 @@ def lookup():
 
     placetype = flask.request.args.get('placetype', None)
 
-    if placetype and not placetypes.is_valid_placetype(placetype):
-        flask.abort(400)
+    if placetype:
+
+        placetype = placetype.split(",")
+
+        for p in placetype:
+
+            if not placetypes.is_valid_placetype(p):
+                flask.abort(400)
 
     if lat and lon:
         rsp = by_latlon(lat, lon, placetype)
@@ -46,17 +52,20 @@ def lookup():
 
     return enresponsify(rsp)
 
-def by_latlon(lat, lon, placetype):
+def by_latlon(lat, lon, placetypes):
 
     # TO DO - sanity check lat and lon here...
 
     lat = float(lat)
     lon = float(lon)
 
-    rsp = db.get_by_latlon(lat, lon, placetype=placetype)
+    rsp = db.get_by_latlon_recursive(lat, lon, placetypes=placetypes)        
     return rsp
 
-def by_extent(bbox, placetype):
+def by_extent(bbox, placetypes):
+
+    # sudo make a "recursive" version of me...
+    placetype = placetypes[0]
 
     bbox = bbox.split(",")
     swlat, swlon, nelat, nelon = map(float, bbox)
