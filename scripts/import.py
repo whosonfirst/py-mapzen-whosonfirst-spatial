@@ -20,12 +20,8 @@ if __name__ == '__main__':
 
     opt_parser.add_option('-s', '--source', dest='source', action='store', default='None', help='')
     opt_parser.add_option('-c', '--config', dest='config', action='store', default='None', help='')
-
-    # opt_parser.add_option('-d', '--database', dest='database', action='store', default='whosonfirst_pip', help='')
-    # opt_parser.add_option('-u', '--username', dest='username', action='store', default='postgres', help='')
-    # opt_parser.add_option('-p', '--password', dest='password', action='store', default=None, help='')
-
     opt_parser.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Be chatty (default is false)')
+
     options, args = opt_parser.parse_args()
 
     if options.verbose:	
