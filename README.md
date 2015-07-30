@@ -29,8 +29,9 @@ $> createdb whosonfirst_pip
 $> psql -d whosonfirst_pip -c "CREATE EXTENSION postgis;"
 $> psql -d whosonfirst_pip -c "CREATE EXTENSION postgis_topology;"
 $> psql -d whosonfirst
-gazetteer=# CREATE TABLE whosonfirst (id BIGINT PRIMARY KEY, placetype VARCHAR, properties TEXT, geom GEOGRAPHY(MULTIPOLYGON, 4326));
+gazetteer=# CREATE TABLE whosonfirst (id BIGINT PRIMARY KEY, placetype VARCHAR, properties TEXT, geom GEOGRAPHY(MULTIPOLYGON, 4326), centroid GEOGRAPHY(POINT, 4326));
 CREATE INDEX by_geom ON whosonfirst USING GIST(geom);
+CREATE INDEX by_centroid ON whosonfirst USING GIST(centroid);
 CREATE INDEX by_placetype ON whosonfirst (placetype);
 VACUUM ANALYZE;
 ```
