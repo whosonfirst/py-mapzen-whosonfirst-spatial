@@ -193,3 +193,4 @@ This is not meant for fulltext search. No. There will be a separate `py-mapzen-w
 
 * https://github.com/mapzen/theory-whosonfirst
 * https://github.com/mapzen/whosonfirst-data
+* https://github.com/mapzen/py-mapzen-whosonfirst-search
