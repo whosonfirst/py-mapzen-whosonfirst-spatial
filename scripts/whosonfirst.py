@@ -30,6 +30,9 @@ class lookup:
 
         self.cache = cache()
 
+        # https://pypi.python.org/pypi/psycopg2
+        # http://initd.org/psycopg/docs/module.html#psycopg2.connect
+
         conn = psycopg2.connect(dsn)
         curs = conn.cursor()
 
