@@ -17,6 +17,7 @@ if __name__ == '__main__':
     opt_parser = optparse.OptionParser()
 
     opt_parser.add_option('-c', '--config', dest='config', action='store', default=None, help='')
+    opt_parser.add_option('-s', '--section', dest='sect', action='store', default='whosonfirst', help='')
     opt_parser.add_option('-l', '--latlong', dest='latlon', action='store_true', default=None, help='')
     opt_parser.add_option('-b', '--bbox', dest='bbox', action='store_true', default=None, help='')
     opt_parser.add_option('-p', '--placetype', dest='placetype', action='store', default=None, help='')
@@ -32,7 +33,7 @@ if __name__ == '__main__':
     cfg = ConfigParser.ConfigParser()
     cfg.read(options.config)
 
-    dsn = mapzen.whosonfirst.spatial.cfg2dsn(cfg, 'whosonfirst')
+    dsn = mapzen.whosonfirst.spatial.cfg2dsn(cfg, whosonfirst')
     db = mapzen.whosonfirst.spatial.query(dsn)
 
     args = args[0].split(",")

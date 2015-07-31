@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 def init():
 
     query_dsn = os.environ.get('WOF_SPATIAL_DSN', None)
-    query_db = mapzen.whosonfirst.spatial.query(query_dsn)
+    query_db = spatial.query(query_dsn)
 
     flask.g.query_db = query_db
 
@@ -108,11 +108,13 @@ if __name__ == '__main__':
 
     import sys
     import optparse
+    import ConfigParser
 
     opt_parser = optparse.OptionParser()
 
     opt_parser.add_option('-p', '--port', dest='port', action='store', default=8888, help='')
     opt_parser.add_option('-c', '--config', dest='config', action='store', default=None, help='')
+    opt_parser.add_option('-s', '--section', dest='sect', action='store', default='whosonfirst', help='')
 
     opt_parser.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Be chatty (default is false)')
     options, args = opt_parser.parse_args()
@@ -129,7 +131,7 @@ if __name__ == '__main__':
     cfg = ConfigParser.ConfigParser()
     cfg.read(options.config)
 
-    dsn = spatial.cfg2dsn(cfg, 'whosonfirs')
+    dsn = spatial.cfg2dsn(cfg, options.sect)
     os.environ['WOF_SPATIAL_DSN'] = dsn
 
     port = int(options.port)
