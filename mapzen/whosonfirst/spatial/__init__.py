@@ -5,6 +5,16 @@ import psycopg2
 import json
 import logging
 
+def cfg2dsn(cfg, sect):
+        
+    db_user = cfg.get(sect, 'db_user')
+    db_pswd = cfg.get(sect, 'db_pswd')
+    db_host = cfg.get(sect, 'db_host')
+    db_name = cfg.get(sect, 'db_name')
+    
+    dsn = "dbname=%s user=%s password=%s host=%s" % (db_name, db_user, db_pswd, db_host)
+    return dsn
+
 class cache:
     
     def __init__(self):
@@ -28,6 +38,7 @@ class db:
 
         # https://pypi.python.org/pypi/psycopg2
         # http://initd.org/psycopg/docs/module.html#psycopg2.connect
+        # dsn = "dbname=%s user=%s password=%s host=%s" % (db_name, db_user, db_pswd, db_host)
 
         conn = psycopg2.connect(dsn)
         curs = conn.cursor()
@@ -217,10 +228,7 @@ if __name__ == '__main__':
 
     opt_parser = optparse.OptionParser()
 
-    opt_parser.add_option('-d', '--database', dest='database', action='store', default='whosonfirst_pip', help='')
-    opt_parser.add_option('-u', '--username', dest='username', action='store', default='postgres', help='')
-    # opt_parser.add_option('-p', '--password', dest='password', action='store', default=None, help='')
-
+    opt_parser.add_option('-c', '--config', dest='config', action='store', default=None, help='')
     opt_parser.add_option('-l', '--latlong', dest='latlon', action='store_true', default=None, help='')
     opt_parser.add_option('-b', '--bbox', dest='bbox', action='store_true', default=None, help='')
     opt_parser.add_option('-p', '--placetype', dest='placetype', action='store', default=None, help='')
@@ -233,7 +241,10 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.INFO)
 
-    dsn = "dbname=%s user=%s" % (options.database, options.username)
+    cfg = ConfigParser.ConfigParser()
+    cfg.read(options.config)
+
+    dsn = spatial.cfg2dsn(cfg, 'spatial')
     db = query(dsn)
 
     args = args[0].split(",")

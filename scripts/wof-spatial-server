@@ -13,13 +13,18 @@ import werkzeug
 import werkzeug.security
 from werkzeug.contrib.fixers import ProxyFix
 
-dsn = os.environ['WOF_LOOKUP_DSN']
-db = spatial.query(dsn)
-
 app = flask.Flask('WOF_LOOKUP')
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
 logging.basicConfig(level=logging.INFO)
+
+@app.before_request
+def init():
+
+    query_dsn = os.environ.get('WOF_SPATIAL_DSN', None)
+    query_db = mapzen.whosonfirst.spatial.query(query_dsn)
+
+    flask.g.query_db = query_db
 
 @app.route("/")
 def lookup():
@@ -57,7 +62,7 @@ def by_latlon(lat, lon, placetypes):
     lat = float(lat)
     lon = float(lon)
 
-    rsp = db.get_by_latlon_recursive(lat, lon, placetypes=placetypes)        
+    rsp = flask.g.query_db.get_by_latlon_recursive(lat, lon, placetypes=placetypes)        
     return rsp
 
 def by_extent(bbox, placetypes):
@@ -70,7 +75,7 @@ def by_extent(bbox, placetypes):
 
     # TO DO - sanity check lat and lon here...
 
-    rsp = db.get_by_extent(swlat, swlon, nelat, nelon, placetype=placetype)
+    rsp = flask.g.query_db.get_by_extent(swlat, swlon, nelat, nelon, placetype=placetype)
     return rsp
 
 """
@@ -107,6 +112,7 @@ if __name__ == '__main__':
     opt_parser = optparse.OptionParser()
 
     opt_parser.add_option('-p', '--port', dest='port', action='store', default=8888, help='')
+    opt_parser.add_option('-c', '--config', dest='config', action='store', default=None, help='')
 
     opt_parser.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Be chatty (default is false)')
     options, args = opt_parser.parse_args()
@@ -116,7 +122,15 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.INFO)
 
-    logging.warning("OMG UPDATE ME TO READ FROM A CONFIG FILE")
+    if not os.path.exists(options.config):
+        logging.error("Missing config file")
+        sys.exit()
+
+    cfg = ConfigParser.ConfigParser()
+    cfg.read(options.config)
+
+    dsn = spatial.cfg2dsn(cfg, 'whosonfirs')
+    os.environ['WOF_SPATIAL_DSN'] = dsn
 
     port = int(options.port)
     app.run(port=port)

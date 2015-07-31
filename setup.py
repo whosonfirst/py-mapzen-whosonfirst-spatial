@@ -13,13 +13,15 @@ setup(
     author='Mapzen',
     url='https://github.com/mapzen/py-mapzen-whosonfirst-spatial',
     install_requires=[
-        'psycopg2',
+        # 'psycopg2',
         ],
     dependency_links=[
         ],
     packages=packages,
     scripts=[
-        'scripts/wof-es-index',
+        'scripts/wof-spatial-index',
+        'scripts/wof-spatial-query',
+        'scripts/wof-spatial-server',
         ],
     download_url='https://github.com/mapzen/py-mapzen-whosonfirst-spatial/releases/tag/v0.01',
     license='BSD')
