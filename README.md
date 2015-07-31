@@ -1,17 +1,15 @@
-# py-mapzen-whosonfirst-lookup
-
-"lookup"?  I don't know. Something. Also I can't be bothered to make myself sad and angry sorting out Python namespaces right now. I will, just not today...
+# py-mapzen-whosonfirst-spatial
 
 ## Importing data
 
 There is already a handy `import.py` script for importing a directory full of files (like say, maybe... [whosonfirst-data](https://github.com/mapzen/whosonfirst-data)) and basically all it is doing is this:
 
 ```
-import whosonfirst
+import mapzen.whosonfirst.spatial
 import mapzen.whosonfirst.utils
 
 dsn = "..."
-db = whosonfirst.lookup(dsn)
+idx = mapzen.whosonfirst.spatial.index(dsn)
 
 source = os.path.asbpath(source)
 crawl = mapzen.whosonfirst.utils.crawl(source, inflate=True)
@@ -20,41 +18,17 @@ for feature in crawl:
 	db.import_feature(feature)
 ```
 
-### PostGIS
-
-```
-$> sudo apt-get install postgresql-9.3 postgresql-client postgis postgresql-9.3-postgis-scripts python-psycopg2
-$> sudo su -m postgres
-$> createdb whosonfirst_pip
-$> psql -d whosonfirst_pip -c "CREATE EXTENSION postgis;"
-$> psql -d whosonfirst_pip -c "CREATE EXTENSION postgis_topology;"
-$> psql -d whosonfirst
-gazetteer=# CREATE TABLE whosonfirst (id BIGINT PRIMARY KEY, placetype VARCHAR, properties TEXT, geom GEOGRAPHY(MULTIPOLYGON, 4326));
-CREATE INDEX by_geom ON whosonfirst USING GIST(geom);
-CREATE INDEX by_placetype ON whosonfirst (placetype);
-VACUUM ANALYZE;
-```
-
-#### Caveats
-
-* This schema assumes `MULTIPOLYGON` geometries so 1) the import tools will convert single geometries to... mutli-geometries and 2) it will not work with point data (aka venues)
-* The example above (and the code) still assume a database called `whosonfirst_pip` instead of something more sensible like `whosonfirst_lookup`. One thing at a time...
-
-## Usage
-
-### Basic
-
-_Remember, when you see `whosonfirst.lookup` you are seeing me trying not to get angry and sad before I have to. This name will change._
+## Querying data
 
 ### Lookup by lat,lon
 
 Find one or more WOF places (optionally of a specific placetype) that contain a given point.
 
 ```
-import whosonfirst
+import mapzen.whosonfirst.spatial
 
 dsn = "..."
-db = whosonfirst.lookup(dsn)
+db = mapzen.whosonfirst.spatial.query(dsn)
 
 lat = 37.763251
 lon = -122.424002
@@ -79,10 +53,10 @@ $> whosonfirst.py -p neighbourhood -l 37.763251,-122.424002
 Find one or more WOF places (optionally of a specific placetype) that intersect a given bounding box.
 
 ```
-import whosonfirst
+import mapzen.whosonfirst.spatial
 
 dsn = "..."
-db = whosonfirst.lookup(dsn)
+db = mapzen.whosonfirst.spatial.query(dsn)
 
 bbox = '37.763251,-122.424002,37.768476,-122.417865'
 swlat, swlon, nelat, nelon = bbox.split(",")
@@ -179,11 +153,28 @@ $> curl 'http://localhost:8888/?bbox=37.763251,-122.424002,37.768476,-122.417865
 }
 ```
 
+### PostGIS
+
+```
+$> sudo apt-get install postgresql-9.3 postgresql-client postgis postgresql-9.3-postgis-scripts python-psycopg2
+$> sudo su -m postgres
+$> createdb whosonfirst
+$> psql -d whosonfirst -c "CREATE EXTENSION postgis;"
+$> psql -d whosonfirst -c "CREATE EXTENSION postgis_topology;"
+$> psql -d whosonfirst
+gazetteer=# CREATE TABLE whosonfirst (id BIGINT PRIMARY KEY, placetype VARCHAR, properties TEXT, geom GEOGRAPHY(MULTIPOLYGON, 4326), centroid GEOGRAPHY(POINT, 4326));
+CREATE INDEX by_geom ON whosonfirst USING GIST(geom);
+CREATE INDEX by_placetype ON whosonfirst (placetype);
+VACUUM ANALYZE;
+```
+
 ## Caveats
 
 ### Geometries
 
-As I write this GeoJSON `geometry` elements are not included in any responses by default. This is by design for performance reasons. It will be possible 
+* This schema assumes `MULTIPOLYGON` geometries so 1) the import tools will convert single geometries to... mutli-geometries and 2) it will not work with point data (aka venues) – this is no longer true but I haven't updated the code...
+
+* As I write this GeoJSON `geometry` elements are not included in any responses by default. This is by design for performance reasons. It will be possible 
 
 ### Search 
 

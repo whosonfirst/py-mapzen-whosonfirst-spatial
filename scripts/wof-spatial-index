@@ -1,15 +1,12 @@
 #!/usr/bin/env python
+# -*-python-*-
 
 import sys
 import os.path
 import logging
 
 import mapzen.whosonfirst.utils
-
-# see notes in (local) whosonfirst.py about namespaces
-# and anger (20150723/thisisaaronland)
-
-import whosonfirst
+import mapzen.whosonfirst.spatial
 
 if __name__ == '__main__':
 
@@ -21,7 +18,8 @@ if __name__ == '__main__':
     opt_parser.add_option('-s', '--source', dest='source', action='store', default='None', help='')
     opt_parser.add_option('-d', '--database', dest='database', action='store', default='whosonfirst_pip', help='')
     opt_parser.add_option('-u', '--username', dest='username', action='store', default='postgres', help='')
-    # opt_parser.add_option('-p', '--password', dest='password', action='store', default=None, help='')
+
+    # sudo make me use a config file...
 
     opt_parser.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Be chatty (default is false)')
     options, args = opt_parser.parse_args()
@@ -32,14 +30,14 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.INFO)
 
     dsn = "dbname=%s user=%s" % (options.database, options.username)
-    db = whosonfirst.lookup(dsn)
+    idx = mapzen.whosonfirst.spatial.index(dsn)
 
     source = os.path.abspath(options.source)
     crawl = mapzen.whosonfirst.utils.crawl(source, inflate=True)
 
     for feature in crawl:
         logging.debug("import feature %s" % feature.get('id', "UNKNOWN"))
-        db.import_feature(feature)
+        idx.import_feature(feature)
 
     sys.exit()
         

@@ -1,9 +1,5 @@
-#!/usr/bin/env python
-
-# sudo put me a in a nice python namespace except for the part where
-# something something something python namespaces something something
-# something anger something something something just get it working
-# (20150723/thisisaaronland)
+# https://pythonhosted.org/setuptools/setuptools.html#namespace-packages
+__import__('pkg_resources').declare_namespace(__name__)
 
 import psycopg2
 import json
@@ -24,7 +20,7 @@ class cache:
         if self.__cache__.get(k, None):
             del(self.__cache__[k])
 
-class lookup:
+class db:
 
     def __init__ (self, dsn):
 
@@ -35,6 +31,8 @@ class lookup:
 
         self.conn = conn
         self.curs = curs
+
+class index(db):
 
     def import_feature(self, feature):
 
@@ -95,6 +93,8 @@ class lookup:
                 raise Exception, e
 
         return True
+
+class query(db):
 
     def get_by_id(self, id):
 
@@ -231,7 +231,7 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.INFO)
 
     dsn = "dbname=%s user=%s" % (options.database, options.username)
-    db = lookup(dsn)
+    db = query(dsn)
 
     args = args[0].split(",")
 
