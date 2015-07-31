@@ -116,5 +116,7 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.INFO)
 
+    logging.warning("OMG UPDATE ME TO READ FROM A CONFIG FILE")
+
     port = int(options.port)
     app.run(port=port)

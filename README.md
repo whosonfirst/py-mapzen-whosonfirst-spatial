@@ -20,6 +20,10 @@ for feature in crawl:
 
 ## Querying data
 
+### Basic
+
+_Remember, when you see `whosonfirst.lookup` you are seeing me trying not to get angry and sad before I have to. This name will change._
+
 ### Lookup by lat,lon
 
 Find one or more WOF places (optionally of a specific placetype) that contain a given point.
