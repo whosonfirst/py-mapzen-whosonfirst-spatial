@@ -57,12 +57,22 @@ def lookup():
 
 def by_latlon(lat, lon, placetypes):
 
-    # TO DO - sanity check lat and lon here...
-
     lat = float(lat)
     lon = float(lon)
 
-    rsp = flask.g.query_db.get_by_latlon_recursive(lat, lon, placetypes=placetypes)        
+    if not is_valid_latitude(lat):
+        flask.abort(400)
+
+    if not is_valid_longitude(lon):
+        flask.abort(400)
+
+    # basically belongs to...
+
+    if not placetypes:
+        rsp = flask.g.query_db.get_by_latlon(lat, lon)
+    else:
+        rsp = flask.g.query_db.get_by_latlon_recursive(lat, lon, placetypes=placetypes)        
+
     return rsp
 
 def by_extent(bbox, placetypes):
@@ -73,7 +83,11 @@ def by_extent(bbox, placetypes):
     bbox = bbox.split(",")
     swlat, swlon, nelat, nelon = map(float, bbox)
 
-    # TO DO - sanity check lat and lon here...
+    if not is_valid_latitude(swlat) or not is_valid_latitude(nelat):
+        flask.abort(400)
+
+    if not is_valid_longitude(swlon) or not is_valid_longitude(nelon):
+        flask.abort(400)
 
     rsp = flask.g.query_db.get_by_extent(swlat, swlon, nelat, nelon, placetype=placetype)
     return rsp
@@ -103,6 +117,28 @@ def enresponsify(rsp):
 
     rsp = {'type': 'FeatureCollection', 'features': features}
     return flask.jsonify(rsp)
+
+def is_valid_latitude(lat):
+    lat = float(lat)
+
+    if lat < -90.0:
+        return False
+
+    if lat > 90.0:
+        return False
+
+    return True
+
+def is_valid_longitude(lon):
+    lon = float(lon)
+
+    if lon < -180.0:
+        return False
+
+    if lon > 180.0:
+        return False
+
+    return True
 
 if __name__ == '__main__':
 

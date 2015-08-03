@@ -21,7 +21,7 @@ setup(
     scripts=[
         'scripts/wof-spatial-index',
         'scripts/wof-spatial-query',
-        'scripts/wof-spatial-server',
+        'scripts/wof-spatial-server.py',
         ],
     download_url='https://github.com/mapzen/py-mapzen-whosonfirst-spatial/releases/tag/v0.01',
     license='BSD')

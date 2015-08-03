@@ -151,9 +151,11 @@ class query(db):
         where = []
         params = []
 
-        if kwargs.get('placetype', None):
+        pt = kwargs.get('placetype', None)
+
+        if not pt == None:
             where.append("placetype=%s")
-            params.append(kwargs['placetype'])
+            params.append(pt)
 
         where.append("ST_Contains(geom::geometry, ST_SetSRID(ST_Point(%s, %s), 4326))")
         params.extend([lon, lat])

@@ -1,9 +1,6 @@
 *~
 *.pyc
-<<<<<<< HEAD
 build
 dist
 *.egg-info
-=======
 *.cfg
->>>>>>> 152b9a265141fd81c40493a094f9c16e8956dcd5
