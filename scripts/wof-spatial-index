@@ -44,16 +44,6 @@ if __name__ == '__main__':
 
     for feature in crawl:
         logging.debug("import feature %s" % feature.get('id', "UNKNOWN"))
-
-        geom = feature['geometry']
-
-        # THIS SHOULD NOT BE NECESSARY ANYMORE BUT OTHER CODES NEED TO
-        # BE UPDATED... (20150731/thisisaaronland)
-
-        if geom['type'] == 'Point':
-            logging.warning("skipping because %s is a point" % id)
-            continue
-
         idx.import_feature(feature)
 
     sys.exit()

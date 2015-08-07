@@ -53,8 +53,6 @@ class index(db):
         geom = feature['geometry']
         props = feature['properties']
 
-        # GRRRRNNNNN..... maybe? 
-
         if geom['type'] == 'Polygon':
             geom['coordinates'] = [ geom['coordinates'] ]
             geom['type'] = 'MultiPolygon'
@@ -71,7 +69,11 @@ class index(db):
         
         try:
 
-            sql = "INSERT INTO whosonfirst (id, placetype, properties, geom) VALUES (%s, %s, %s, ST_GeomFromGeoJSON(%s))"
+            if geom['type'] == 'Point':
+                sql = "INSERT INTO whosonfirst (id, placetype, properties, centroid) VALUES (%s, %s, %s, ST_GeomFromGeoJSON(%s))"
+            else:
+                sql = "INSERT INTO whosonfirst (id, placetype, properties, geom) VALUES (%s, %s, %s, ST_GeomFromGeoJSON(%s))"
+
             params = (id, placetype, str_props, str_geom)
             
             self.curs.execute(sql, params)
@@ -83,8 +85,12 @@ class index(db):
 
             try:
                 self.conn.rollback()
-            
-                sql = "UPDATE whosonfirst SET placetype=%s, properties=%s, geom=ST_GeomFromGeoJSON(%s) WHERE id=%s"
+                
+                if geom['type'] == 'Point':
+                    sql = "UPDATE whosonfirst SET placetype=%s, properties=%s, centroid=ST_GeomFromGeoJSON(%s) WHERE id=%s"
+                else:
+                    sql = "UPDATE whosonfirst SET placetype=%s, properties=%s, geom=ST_GeomFromGeoJSON(%s) WHERE id=%s"
+
                 params = (placetype, str_props, str_geom, id)
                 
                 self.curs.execute(sql, params)
