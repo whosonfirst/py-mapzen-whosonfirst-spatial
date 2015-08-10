@@ -61,6 +61,8 @@ class index(db):
         id = props['wof:id']
         id = int(id)
 
+        parent_id = props.get('wof:planet_id', -1)
+
         if placetype == 'planet':
             return False
 
@@ -70,11 +72,11 @@ class index(db):
         try:
 
             if geom['type'] == 'Point':
-                sql = "INSERT INTO whosonfirst (id, placetype, properties, centroid) VALUES (%s, %s, %s, ST_GeomFromGeoJSON(%s))"
+                sql = "INSERT INTO whosonfirst (id, parent_id, placetype, properties, centroid) VALUES (%s, %s, %s, %s, ST_GeomFromGeoJSON(%s))"
             else:
-                sql = "INSERT INTO whosonfirst (id, placetype, properties, geom) VALUES (%s, %s, %s, ST_GeomFromGeoJSON(%s))"
+                sql = "INSERT INTO whosonfirst (id, parent_id, placetype, properties, geom) VALUES (%s, %s, %s, %s, ST_GeomFromGeoJSON(%s))"
 
-            params = (id, placetype, str_props, str_geom)
+            params = (id, parent_id, placetype, str_props, str_geom)
             
             self.curs.execute(sql, params)
             self.conn.commit()
@@ -87,11 +89,11 @@ class index(db):
                 self.conn.rollback()
                 
                 if geom['type'] == 'Point':
-                    sql = "UPDATE whosonfirst SET placetype=%s, properties=%s, centroid=ST_GeomFromGeoJSON(%s) WHERE id=%s"
+                    sql = "UPDATE whosonfirst SET parent_id=%s, placetype=%s, properties=%s, centroid=ST_GeomFromGeoJSON(%s) WHERE id=%s"
                 else:
-                    sql = "UPDATE whosonfirst SET placetype=%s, properties=%s, geom=ST_GeomFromGeoJSON(%s) WHERE id=%s"
+                    sql = "UPDATE whosonfirst SET parent_id=%s, placetype=%s, properties=%s, geom=ST_GeomFromGeoJSON(%s) WHERE id=%s"
 
-                params = (placetype, str_props, str_geom, id)
+                params = (parent_id, placetype, str_props, str_geom, id)
                 
                 self.curs.execute(sql, params)
                 self.conn.commit()
