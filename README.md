@@ -86,7 +86,7 @@ This just requires writing some hoop-jumping around Migurski's [whereami.py](htt
 
 ## Fancy-pants HTTP pony lookups
 
-See also: [ops-mapzen-whosonfirst-lookup](https://github.com/mapzen/ops-mapzen-whosonfirst-lookup) for a fancier gunicorn/nginx version of this.
+See also: [ops-mapzen-whosonfirst-spatial](https://github.com/mapzen/ops-mapzen-whosonfirst-spatial) for a fancier gunicorn/nginx version of this.
 
 On the server-side:
 
