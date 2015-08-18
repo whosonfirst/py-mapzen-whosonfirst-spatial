@@ -14,6 +14,7 @@ setup(
     url='https://github.com/mapzen/py-mapzen-whosonfirst-spatial',
     install_requires=[
         # 'psycopg2',
+        'geojson',
         ],
     dependency_links=[
         ],

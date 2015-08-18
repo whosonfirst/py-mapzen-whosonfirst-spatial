@@ -2,6 +2,7 @@
 __import__('pkg_resources').declare_namespace(__name__)
 
 import psycopg2
+import geojson
 import json
 import logging
 
@@ -118,6 +119,7 @@ class index(db):
 
 class query(db):
 
+
     def get_by_id(self, id):
 
         cache_key = "id_%s" % id
@@ -230,6 +232,57 @@ class query(db):
         }
 
         return feature
+
+    # new untested stuff - translation:
+    # dunno... maybe... it's all still so new and shiny...
+    # (20150818/thisisaaronland)
+
+    def breaches(self, data, **kwargs):
+
+        # this assumes an 'inflated' row which has been 'append_geometry'-ed
+        # (20150818/thisisaaronland)
+
+        if not data.get('geometry', False):
+            yield
+
+        geom = data['geometry']
+        props = data['properties']
+
+        geom = geojson.dumps(geom)
+
+        where = []
+        params = []
+
+        where.append("placetype=%s")
+        params.append(props['wof:placetype'])
+
+        where.append("ST_Intersects(geom, ST_GeomFromGeoJSON(%s))")
+        params.append(geom)
+
+        where = " AND ".join(where)
+
+        sql = "SELECT id, properties FROM whosonfirst WHERE %s" % where    
+        self.curs.execute(sql, params)
+            
+        for row in self.curs.fetchall():
+            yield self.inflate(row)
+
+    def append_geometry(self, data):
+
+        sql = "SELECT ST_AsGeoJSON(geom) FROM whosonfirst WHERE id=%s"
+        params = [data['id']]
+        
+        self.curs.execute(sql, params)
+        row = self.curs.fetchone()
+
+        if not row:
+            return False
+
+        geom = row[0]
+        geom = geojson.loads(geom)
+            
+        data['geometry'] = geom
+        return True
 
 if __name__ == '__main__':
 
