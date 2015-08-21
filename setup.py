@@ -13,9 +13,10 @@ setup(
     author='Mapzen',
     url='https://github.com/mapzen/py-mapzen-whosonfirst-spatial',
     install_requires=[
-        # 'psycopg2',
-        'mapzen.whosonfirst.whereami',
+        'psycopg2',
         'geojson',
+        'mapzen.whosonfirst.utils',
+        'mapzen.whosonfirst.whereami',
         ],
     dependency_links=[
         ],
