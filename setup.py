@@ -8,7 +8,7 @@ desc = open("README.md").read(),
 setup(
     name='mapzen.whosonfirst.spatial',
     namespace_packages=['mapzen', 'mapzen.whosonfirst', 'mapzen.whosonfirst.spatial'],
-    version='0.01',
+    version='0.02',
     description='Simple Python wrapper for Who\'s On First spatial functionality',
     author='Mapzen',
     url='https://github.com/mapzen/py-mapzen-whosonfirst-spatial',
@@ -24,5 +24,5 @@ setup(
         'scripts/wof-spatial-query',
         'scripts/wof-spatial-server.py',
         ],
-    download_url='https://github.com/mapzen/py-mapzen-whosonfirst-spatial/releases/tag/v0.01',
+    download_url='https://github.com/mapzen/py-mapzen-whosonfirst-spatial/releases/tag/v0.02',
     license='BSD')
