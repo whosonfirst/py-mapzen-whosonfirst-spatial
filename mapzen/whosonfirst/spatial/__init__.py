@@ -182,10 +182,12 @@ class query(db):
         where = []
         params = []
 
+        where.append("ST_IsValid(geom::geometry)")
+
         if kwargs.get('placetype', None):
             where.append("placetype=%s")
             params.append(kwargs['placetype'])        
-          
+        
         if kwargs.get('contains', False):
             where.append("ST_Contains(ST_MakeEnvelope(%s, %s, %s, %s, 4326), geom::geometry)")
         else:
