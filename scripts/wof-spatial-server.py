@@ -62,7 +62,7 @@ def lookup():
     elif bbox:
         rsp = by_extent(bbox, placetype)
 
-    # TO DO – ensure zoom (min/max bbox size) by placetype
+    # TO DO - ensure zoom (min/max bbox size) by placetype
 
     elif tile:
         

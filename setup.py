@@ -15,6 +15,7 @@ setup(
     install_requires=[
         # 'psycopg2',
         'mapzen.whosonfirst.whereami',
+        'geojson',
         ],
     dependency_links=[
         ],
