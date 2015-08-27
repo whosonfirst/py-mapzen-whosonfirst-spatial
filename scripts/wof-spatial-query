@@ -33,7 +33,7 @@ if __name__ == '__main__':
     cfg = ConfigParser.ConfigParser()
     cfg.read(options.config)
 
-    dsn = mapzen.whosonfirst.spatial.cfg2dsn(cfg, whosonfirst')
+    dsn = mapzen.whosonfirst.spatial.cfg2dsn(cfg, 'whosonfirst')
     db = mapzen.whosonfirst.spatial.query(dsn)
 
     args = args[0].split(",")

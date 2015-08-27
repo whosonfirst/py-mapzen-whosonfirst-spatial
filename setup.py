@@ -16,7 +16,6 @@ setup(
         'psycopg2',
         'geojson',
         'mapzen.whosonfirst.utils',
-        'mapzen.whosonfirst.whereami',
         ],
     dependency_links=[
         ],
