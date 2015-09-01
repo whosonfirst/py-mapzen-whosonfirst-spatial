@@ -2,11 +2,13 @@
 # -*-python-*-
 
 import os
+import re
 import logging
 
 import mapzen.whosonfirst.spatial as spatial
 import mapzen.whosonfirst.utils as utils
 import mapzen.whosonfirst.placetypes as placetypes
+import mapzen.whosonfirst.whereami as whereami
 
 import flask
 import werkzeug
@@ -39,6 +41,7 @@ def lookup():
     lat = flask.request.args.get('latitude', None)
     lon = flask.request.args.get('longitude', None)
     bbox = flask.request.args.get('bbox', None)
+    tile = flask.request.args.get('tile', None)
 
     placetype = flask.request.args.get('placetype', None)
 
@@ -54,8 +57,19 @@ def lookup():
     if lat and lon:
         rsp = by_latlon(lat, lon, placetype)
 
+    # TO DO - ensure min/max bbox size by placetype
+
     elif bbox:
         rsp = by_extent(bbox, placetype)
+
+    # TO DO - ensure zoom (min/max bbox size) by placetype
+
+    elif tile:
+        
+        if not re.match(r'^\d+/\d+/\d+$', tile):
+            flask.abort(400)
+
+        rsp = by_tile(tile, placetype)
 
     else:
         flask.abort(400)
@@ -85,7 +99,11 @@ def by_latlon(lat, lon, placetypes):
 def by_extent(bbox, placetypes):
 
     # sudo make a "recursive" version of me...
-    placetype = placetypes[0]
+
+    if placetypes:
+        placetype = placetypes[0]
+    else:
+        placetype = None
 
     bbox = bbox.split(",")
     swlat, swlon, nelat, nelon = map(float, bbox)
@@ -99,13 +117,18 @@ def by_extent(bbox, placetypes):
     rsp = flask.g.query_db.get_by_extent(swlat, swlon, nelat, nelon, placetype=placetype)
     return rsp
 
-"""
-def by_tms(tms, placetype):
-    z, x, y = tms
+def by_tile(tile, placetype):
 
-    bbox = whereami(z, x, y)
-    return by_exent(bbox, placetype)
-"""
+    rsp = whereami.whereami(tile)
+    sw = rsp.get('southwest').split(' ')
+    ne = rsp.get('northeast').split(' ')
+
+    bbox = []
+    bbox.extend(sw)
+    bbox.extend(ne)
+    bbox = ",".join(bbox)
+
+    return by_extent(bbox, placetype)
 
 def enresponsify(rsp):
 
