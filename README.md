@@ -1,5 +1,12 @@
 # py-mapzen-whosonfirst-spatial
 
+## IMPORTANT
+
+This library is provided as-is, right now. It lacks proper
+documentation which will probably make it hard for you to use unless
+you are willing to poke and around and investigate things on your
+own.
+
 ## Importing data
 
 There is already a handy `import.py` script for importing a directory full of files (like say, maybe... [whosonfirst-data](https://github.com/mapzen/whosonfirst-data)) and basically all it is doing is this:

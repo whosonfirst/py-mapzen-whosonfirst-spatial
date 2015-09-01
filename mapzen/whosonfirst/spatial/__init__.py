@@ -253,6 +253,9 @@ class query(db):
         where = []
         params = []
 
+        where.append("id != %s")
+        params.append(props['wof:id'])
+
         where.append("placetype=%s")
         params.append(props['wof:placetype'])
 
