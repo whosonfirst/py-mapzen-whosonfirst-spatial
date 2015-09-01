@@ -5,6 +5,9 @@ import psycopg2
 import geojson
 import json
 import logging
+import shapely.geometry
+
+import mapzen.whosonfirst.placetypes
 
 def cfg2dsn(cfg, sect):
         
@@ -15,6 +18,69 @@ def cfg2dsn(cfg, sect):
     
     dsn = "dbname=%s user=%s password=%s host=%s" % (db_name, db_user, db_pswd, db_host)
     return dsn
+
+def feature2reversegeo_coords(feature):
+
+    props = feature['properties']
+
+    lat = props.get('mps:latitude', None)
+    lon = props.get('mps:longitude', None)
+
+    if lat and lon:
+        return (lat, lon)
+
+    lat = props.get('lbl:latitude', None)
+    lon = props.get('lbl:longitude', None)
+
+    if lat and lon:
+        return (lat, lon)
+
+    lat = props.get('geom:latitude', None)
+    lon = props.get('geom:longitude', None)
+    
+    if lat and lon:
+        return (lat, lon)
+
+    geom = feature['geometry']
+    shp = shapely.geometry.asShape(geom)
+    coords = shp.centroid
+    
+    lat = coords.y
+    lon = coords.x
+
+    return (lat, lon)
+
+def feature2reversegeo_placetypes(feature, **kwargs):
+
+    allowed_optional = kwargs.get('allowed_optional', ['county'])
+    
+    props = feature['properties']
+    placetype = props['wof:placetype']
+
+    ancestors = []
+
+    last = placetype
+
+    while last:
+
+        placetype = mapzen.whosonfirst.placetypes.placetype(last)
+        last = None
+
+        for p in placetype.parents():
+
+            pt = str(p)
+            role = p.role()
+
+            if role == 'common':
+                ancestors.append(pt)
+            elif role == 'common_optional' and str(p) in allowed_optional:
+                ancestors.append(pt)
+            else:
+                pass
+
+            last = pt
+
+    return ancestors
 
 class cache:
     
@@ -205,6 +271,44 @@ class query(db):
             
         for row in self.curs.fetchall():
             yield self.inflate(row)
+
+    def generate_hierarchy(self, feature, **kwargs):
+
+        hier = []
+
+        lat,lon = mapzen.whosonfirst.spatial.feature2reversegeo_coords(feature)
+        placetypes = mapzen.whosonfirst.spatial.feature2reversegeo_placetypes(feature)
+
+        while len(placetypes):
+
+            logging.debug("lookup hier for %s" % ",".join(placetypes))
+            
+            rsp = self.get_by_latlon_recursive(lat, lon, placetypes=placetypes)
+
+            features = []
+
+            for _feature in rsp:
+                _props = _feature['properties']
+                _hier = _props['wof:hierarchy']
+                
+                if len(_hier) > 0:
+                    features.append(_feature)
+
+            if len(features):
+                break
+
+            placetypes = placetypes[1:]
+
+        for pf in features:
+            pp = pf['properties']
+
+            if pp.get('wof:hierarchy', False):
+                hier.extend(pp['wof:hierarchy'])
+
+        return hier
+
+    # props['wof:hierarchy'] = hier
+    # feature['properties'] = props
 
     def inflate_hierarchies(self, hiers):
 
