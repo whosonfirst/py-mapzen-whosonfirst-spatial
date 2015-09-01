@@ -6,6 +6,7 @@ import geojson
 import json
 import logging
 import shapely.geometry
+import copy
 
 import mapzen.whosonfirst.placetypes
 
@@ -274,16 +275,23 @@ class query(db):
 
     def generate_hierarchy(self, feature, **kwargs):
 
+        properties = feature['properties']
+
+        wofid = properties['wof:id']
+        pt_key = "%s_id" % properties['wof:placetype']
+
         hier = []
 
         lat,lon = mapzen.whosonfirst.spatial.feature2reversegeo_coords(feature)
+
         placetypes = mapzen.whosonfirst.spatial.feature2reversegeo_placetypes(feature)
+        possible = copy.deepcopy(placetypes)
 
-        while len(placetypes):
+        while len(possible):
 
-            logging.debug("lookup hier for %s" % ",".join(placetypes))
+            logging.debug("lookup hier for %s" % ",".join(possible))
             
-            rsp = self.get_by_latlon_recursive(lat, lon, placetypes=placetypes)
+            rsp = self.get_by_latlon_recursive(lat, lon, placetypes=possible)
 
             features = []
 
@@ -297,18 +305,83 @@ class query(db):
             if len(features):
                 break
 
-            placetypes = placetypes[1:]
+            possible = possible[1:]
 
         for pf in features:
+
             pp = pf['properties']
 
             if pp.get('wof:hierarchy', False):
-                hier.extend(pp['wof:hierarchy'])
+                ph = pp['wof:hierarchy']
+
+                # See this: First we're going to ensure
+                # that the actual feature ID/placetype is
+                # included. Next we're going to ensure
+                # that all the ancestors are included and
+                # flagged appropriately if missing
+                
+                for _h in ph:
+                    _h[ pt_key ] = wofid
+
+                    for p in placetypes:
+                        k = "%s_id" % p
+
+                        if not _h.has_key(k):
+                            _h[k] = -1
+
+                hier.extend(ph)
 
         return hier
 
-    # props['wof:hierarchy'] = hier
-    # feature['properties'] = props
+    def append_hierarchy(self, feature):
+
+        hier = self.generate_hierarchy(feature)
+    
+        props = feature['properties']
+        props['wof:hierarchy'] = hier
+
+        feature['properties'] = props
+            
+    def append_hierarchy_and_parent(self, feature):
+
+        self.append_hierarchy(feature)
+
+        parent_id = -1
+        
+        props = feature['properties']
+        hier = props['wof:hierarchy']
+        count = len(hier)
+
+        if count == 0:
+            logging.warning("failed to assign hierarchy so there's nothing to derive parents from")
+                
+        elif count > 1:
+            logging.warning("too many parents to choose from")
+                
+        else:
+
+            h = hier[0]
+        
+            placetype = props['wof:placetype']
+            placetype = mapzen.whosonfirst.placetypes.placetype(placetype)
+                
+            # file under known-knowns : some (many?) venues may not have
+            # available neighbourhood polygons at the time of their import
+            # so rather than changing the placetype spec and allowing
+            # localities to parent venues we're just going to mark the 
+            # parent ID as -1 and deal with it later once we've imported
+            # more data (20150826/thisisaaronland)
+            
+            for p in placetype.parents():
+            
+                k = "%s_id" % p
+
+                if h.get(k, None):
+                    parent_id = h[k]
+                    break
+
+        props['wof:parent_id'] = parent_id
+        feature['properties'] = props
 
     def inflate_hierarchies(self, hiers):
 
