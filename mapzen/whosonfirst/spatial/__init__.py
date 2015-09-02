@@ -100,7 +100,7 @@ class cache:
 
 class db:
 
-    def __init__ (self, dsn):
+    def __init__ (self, dsn, **kwargs):
 
         self.cache = cache()
 
@@ -108,11 +108,31 @@ class db:
         # http://initd.org/psycopg/docs/module.html#psycopg2.connect
         # dsn = "dbname=%s user=%s password=%s host=%s" % (db_name, db_user, db_pswd, db_host)
 
-        conn = psycopg2.connect(dsn)
+        self.dsn = dsn
+
+        self.conn = None
+        self.curs = None
+
+        # "...so when using a module such as multiprocessing or a forking web deploy method such
+        # as FastCGI make sure to create the connections after the fork."
+        # http://initd.org/psycopg/docs/usage.html#thread-safety
+
+        if not kwargs.get('defer', False):
+            self.connect()
+
+    def connect(self):
+
+        if self.conn:
+            return
+
+        conn = psycopg2.connect(self.dsn)
         curs = conn.cursor()
 
         self.conn = conn
         self.curs = curs
+
+    def __del__(self):
+        pass
 
 class index(db):
 
