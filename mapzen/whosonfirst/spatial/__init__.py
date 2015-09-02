@@ -53,7 +53,7 @@ def feature2reversegeo_coords(feature):
 
 def feature2reversegeo_placetypes(feature, **kwargs):
 
-    allowed_optional = kwargs.get('allowed_optional', ['county'])
+    allowed_optional = kwargs.get('allowed_optional', [])
     
     props = feature['properties']
     placetype = props['wof:placetype']
@@ -277,7 +277,11 @@ class query(db):
 
         properties = feature['properties']
 
-        wofid = properties['wof:id']
+        # Note – see how we're special-casing this? That is so we can 
+        # still use this functionality when importing new records which
+        # may not have a WOF:ID yet (20150902/thisisaaronland)
+
+        wofid = properties.get('wof:id', None)
         pt_key = "%s_id" % properties['wof:placetype']
 
         hier = []
@@ -321,7 +325,11 @@ class query(db):
                 # flagged appropriately if missing
                 
                 for _h in ph:
-                    _h[ pt_key ] = wofid
+
+                    if wofid:
+                        _h[ pt_key ] = wofid
+                    else:
+                        _h[ pt_key ] = -1
 
                     for p in placetypes:
                         k = "%s_id" % p
