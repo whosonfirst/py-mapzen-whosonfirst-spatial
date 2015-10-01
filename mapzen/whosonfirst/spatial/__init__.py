@@ -151,9 +151,6 @@ class index(db):
 
         parent_id = props.get('wof:planet_id', -1)
 
-        if placetype == 'planet':
-            return False
-
         str_props = json.dumps(props)
         str_geom = json.dumps(geom)
         
