@@ -45,6 +45,11 @@ if __name__ == '__main__':
 
     for feature in crawl:
         logging.debug("import feature %s" % feature.get('id', "UNKNOWN"))
+
+        if feature.get('id', None) == 0:
+            logging.warning("Skipping the Earth because PostGIS is known to be weird about antipodal hoohah")
+            continue
+
         idx.import_feature(feature)
 
     sys.exit()
