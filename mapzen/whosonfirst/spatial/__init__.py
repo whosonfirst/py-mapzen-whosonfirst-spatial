@@ -186,17 +186,19 @@ class index(db):
                 logging.debug("update WOF:ID %s" % id)
 
             except Exception, e:
-                self.conn.rollback()
                 logging.error("failed to update WOF:ID %s, because %s" % (id, e))
                 logging.error(feature)
+
+                self.conn.rollback()
                 return False
 
                 # raise Exception, e
 
         except Exception, e:
 
-                self.conn.rollback()
                 logging.error("failed to insert WOF:ID %s, because %s" % (id, e))
+
+                self.conn.rollback()
                 raise Exception, e
 
         return True
