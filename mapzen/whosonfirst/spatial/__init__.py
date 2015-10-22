@@ -310,13 +310,13 @@ class query(db):
         placetypes = mapzen.whosonfirst.spatial.feature2reversegeo_placetypes(feature)
         possible = copy.deepcopy(placetypes)
 
+        features = []
+
         while len(possible):
 
             logging.debug("lookup hier for %s" % ",".join(possible))
             
             rsp = self.get_by_latlon_recursive(lat, lon, placetypes=possible)
-
-            features = []
 
             for _feature in rsp:
                 _props = _feature['properties']
