@@ -17,6 +17,7 @@ if __name__ == '__main__':
 
     opt_parser.add_option('-s', '--source', dest='source', action='store', default='None', help='')
     opt_parser.add_option('-c', '--config', dest='config', action='store', default='None', help='')
+    opt_parser.add_option('-i', '--ignore', dest='ignore', action='store', default='', help='')
 
     # something something something default config sections (20150731/thisisaaronland)
 
@@ -42,7 +43,22 @@ if __name__ == '__main__':
     source = os.path.abspath(options.source)
     crawl = mapzen.whosonfirst.utils.crawl(source, inflate=True)
 
+    ignore = []
+
+    for id in options.ignore.split(","):
+        ignore.append(int(id))
+
     for feature in crawl:
+
+        if len(ignore):
+
+            props = feature['properties']
+            wofid = int(props.get('wof:id'))
+
+            if wofid in ignore:
+                logging.info("WOF ID %s is in ignore list so... ignoring")
+                continue
+
         logging.debug("import feature %s" % feature.get('id', "UNKNOWN"))
         idx.import_feature(feature)
 
