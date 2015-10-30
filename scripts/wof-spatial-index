@@ -17,6 +17,7 @@ if __name__ == '__main__':
 
     opt_parser.add_option('-s', '--source', dest='source', action='store', default='None', help='')
     opt_parser.add_option('-c', '--config', dest='config', action='store', default='None', help='')
+    opt_parser.add_option('-S', '--section', dest='section', action='store', default='whosonfirst', help='')
     opt_parser.add_option('-i', '--ignore', dest='ignore', action='store', default='', help='')
 
     # something something something default config sections (20150731/thisisaaronland)
@@ -37,7 +38,7 @@ if __name__ == '__main__':
     cfg = ConfigParser.ConfigParser()
     cfg.read(options.config)
 
-    dsn = mapzen.whosonfirst.spatial.cfg2dsn(cfg, 'whosonfirst')
+    dsn = mapzen.whosonfirst.spatial.cfg2dsn(cfg, options.section)
     idx = mapzen.whosonfirst.spatial.index(dsn)
 
     source = os.path.abspath(options.source)
@@ -60,6 +61,11 @@ if __name__ == '__main__':
                 continue
 
         logging.debug("import feature %s" % feature.get('id', "UNKNOWN"))
+
+        if feature.get('id', None) == 0:
+            logging.warning("Skipping the Earth because PostGIS is known to be weird about antipodal hoohah")
+            continue
+
         idx.import_feature(feature)
 
     sys.exit()
