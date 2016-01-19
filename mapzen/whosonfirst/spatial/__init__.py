@@ -296,7 +296,7 @@ class query(db):
 
         properties = feature['properties']
 
-        # Note – see how we're special-casing this? That is so we can 
+        # Note - see how we're special-casing this? That is so we can 
         # still use this functionality when importing new records which
         # may not have a WOF:ID yet (20150902/thisisaaronland)
 
