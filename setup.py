@@ -21,7 +21,7 @@ version = open("VERSION").read()
 setup(
     name='mapzen.whosonfirst.spatial',
     namespace_packages=['mapzen', 'mapzen.whosonfirst', 'mapzen.whosonfirst.spatial'],
-    version='',
+    version=version,
     description='Simple Python wrapper for Who\'s On First spatial functionality',
     author='Mapzen',
     url='https://github.com/whosonfirst/py-mapzen-whosonfirst-spatial',
@@ -39,7 +39,7 @@ setup(
         'scripts/wof-spatial-query',
         'scripts/wof-spatial-server.py',
         ],
-    download_url='https://github.com/whosonfirst/py-mapzen-whosonfirst-spatial/releases/tag/' + VERSION,
+    download_url='https://github.com/whosonfirst/py-mapzen-whosonfirst-spatial/releases/tag/' + version,
     license='BSD')
 
 logging.warning("HEY LOOK - WE HAVE NOT AUTOMATICALLY INSTALLED psycopg2 BECAUSE IT IS SUPER FUSSY UNDER OS X. YOU WILL NEED TO DO THAT YOURSELF :-(")
