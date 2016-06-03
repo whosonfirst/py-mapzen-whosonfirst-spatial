@@ -93,9 +93,9 @@ class index(db):
         try:
 
             if geom['type'] == 'Point':
-                sql = "INSERT INTO whosonfirst (id, parent_id, placetype, centroid) VALUES (%s, %s, %s, %s, ST_GeomFromGeoJSON(%s))"
+                sql = "INSERT INTO whosonfirst (id, parent_id, placetype, centroid) VALUES (%s, %s, %s, ST_GeomFromGeoJSON(%s))"
             else:
-                sql = "INSERT INTO whosonfirst (id, parent_id, placetype, geom) VALUES (%s, %s, %s, %s, ST_GeomFromGeoJSON(%s))"
+                sql = "INSERT INTO whosonfirst (id, parent_id, placetype, geom) VALUES (%s, %s, %s, ST_GeomFromGeoJSON(%s))"
 
             params = (id, parent_id, placetype, str_geom)
             
@@ -114,7 +114,7 @@ class index(db):
                 else:
                     sql = "UPDATE whosonfirst SET parent_id=%s, placetype=%s, geom=ST_GeomFromGeoJSON(%s) WHERE id=%s"
 
-                params = (parent_id, placetype, str_props, str_geom, id)
+                params = (parent_id, placetype, str_geom, id)
                 
                 self.curs.execute(sql, params)
                 self.conn.commit()

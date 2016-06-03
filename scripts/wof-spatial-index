@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     opt_parser.add_option('-s', '--source', dest='source', action='store', default='None', help='')
     opt_parser.add_option('-c', '--config', dest='config', action='store', default='None', help='')
-    opt_parser.add_option('-S', '--section', dest='section', action='store', default='whosonfirst', help='')
+    opt_parser.add_option('-S', '--section', dest='section', action='store', default='spatial', help='')
     opt_parser.add_option('-i', '--ignore', dest='ignore', action='store', default='', help='')
 
     # something something something default config sections (20150731/thisisaaronland)
@@ -46,9 +46,10 @@ if __name__ == '__main__':
 
     ignore = []
 
-    for id in options.ignore.split(","):
-        ignore.append(int(id))
-
+    if options.ignore != "":
+        for id in options.ignore.split(","):
+            ignore.append(int(id))
+            
     for feature in crawl:
 
         if len(ignore):
