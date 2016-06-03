@@ -5,12 +5,10 @@ import psycopg2
 import geojson
 import json
 import logging
-import shapely.geometry
-import copy
 
 import mapzen.whosonfirst.placetypes
 
-def cfg2dsn(cfg, sect):
+def cfg2dsn(cfg, sect='spatial'):
         
     db_user = cfg.get(sect, 'db_user')
     db_pswd = cfg.get(sect, 'db_pswd')
@@ -19,69 +17,6 @@ def cfg2dsn(cfg, sect):
     
     dsn = "dbname=%s user=%s password=%s host=%s" % (db_name, db_user, db_pswd, db_host)
     return dsn
-
-def feature2reversegeo_coords(feature):
-
-    props = feature['properties']
-
-    lat = props.get('mps:latitude', None)
-    lon = props.get('mps:longitude', None)
-
-    if lat and lon:
-        return (lat, lon)
-
-    lat = props.get('lbl:latitude', None)
-    lon = props.get('lbl:longitude', None)
-
-    if lat and lon:
-        return (lat, lon)
-
-    lat = props.get('geom:latitude', None)
-    lon = props.get('geom:longitude', None)
-    
-    if lat and lon:
-        return (lat, lon)
-
-    geom = feature['geometry']
-    shp = shapely.geometry.asShape(geom)
-    coords = shp.centroid
-    
-    lat = coords.y
-    lon = coords.x
-
-    return (lat, lon)
-
-def feature2reversegeo_placetypes(feature, **kwargs):
-
-    allowed_optional = kwargs.get('allowed_optional', [])
-    
-    props = feature['properties']
-    placetype = props['wof:placetype']
-
-    ancestors = []
-
-    last = placetype
-
-    while last:
-
-        placetype = mapzen.whosonfirst.placetypes.placetype(last)
-        last = None
-
-        for p in placetype.parents():
-
-            pt = str(p)
-            role = p.role()
-
-            if role == 'common':
-                ancestors.append(pt)
-            elif role == 'common_optional' and str(p) in allowed_optional:
-                ancestors.append(pt)
-            else:
-                pass
-
-            last = pt
-
-    return ancestors
 
 class cache:
     
@@ -146,22 +81,23 @@ class index(db):
             geom['type'] = 'MultiPolygon'
 
         placetype = props['wof:placetype']
+
         id = props['wof:id']
         id = int(id)
 
-        parent_id = props.get('wof:planet_id', -1)
+        parent_id = props.get('wof:parent_id', -1)
+        parent_id = int(parent_id)
 
-        str_props = json.dumps(props)
         str_geom = json.dumps(geom)
         
         try:
 
             if geom['type'] == 'Point':
-                sql = "INSERT INTO whosonfirst (id, parent_id, placetype, properties, centroid) VALUES (%s, %s, %s, %s, ST_GeomFromGeoJSON(%s))"
+                sql = "INSERT INTO whosonfirst (id, parent_id, placetype, centroid) VALUES (%s, %s, %s, %s, ST_GeomFromGeoJSON(%s))"
             else:
-                sql = "INSERT INTO whosonfirst (id, parent_id, placetype, properties, geom) VALUES (%s, %s, %s, %s, ST_GeomFromGeoJSON(%s))"
+                sql = "INSERT INTO whosonfirst (id, parent_id, placetype, geom) VALUES (%s, %s, %s, %s, ST_GeomFromGeoJSON(%s))"
 
-            params = (id, parent_id, placetype, str_props, str_geom)
+            params = (id, parent_id, placetype, str_geom)
             
             self.curs.execute(sql, params)
             self.conn.commit()
@@ -174,9 +110,9 @@ class index(db):
                 self.conn.rollback()
                 
                 if geom['type'] == 'Point':
-                    sql = "UPDATE whosonfirst SET parent_id=%s, placetype=%s, properties=%s, centroid=ST_GeomFromGeoJSON(%s) WHERE id=%s"
+                    sql = "UPDATE whosonfirst SET parent_id=%s, placetype=%s, centroid=ST_GeomFromGeoJSON(%s) WHERE id=%s"
                 else:
-                    sql = "UPDATE whosonfirst SET parent_id=%s, placetype=%s, properties=%s, geom=ST_GeomFromGeoJSON(%s) WHERE id=%s"
+                    sql = "UPDATE whosonfirst SET parent_id=%s, placetype=%s, geom=ST_GeomFromGeoJSON(%s) WHERE id=%s"
 
                 params = (parent_id, placetype, str_props, str_geom, id)
                 
@@ -205,7 +141,6 @@ class index(db):
 
 class query(db):
 
-
     def get_by_id(self, id):
 
         cache_key = "id_%s" % id
@@ -225,22 +160,6 @@ class query(db):
 
         self.cache.set(cache_key, row)
         return row
-
-    def get_by_latlon_recursive(self, lat, lon, **kwargs):
-
-        placetypes = kwargs.get('placetypes', [])
-        places = 0
-
-        for p in placetypes:
-            
-            rsp = self.get_by_latlon(lat, lon, placetype=p)
-
-            for row in rsp:
-                places += 1
-                yield row
-
-            if places > 0:
-                break
                 
     def get_by_latlon(self, lat, lon, **kwargs):
 
@@ -258,7 +177,7 @@ class query(db):
 
         where = " AND ".join(where)
 
-        sql = "SELECT id, properties FROM whosonfirst WHERE %s" % where
+        sql = "SELECT id FROM whosonfirst WHERE %s" % where
 
         self.curs.execute(sql, params)
             
@@ -285,163 +204,12 @@ class query(db):
 
         where = " AND ".join(where)
 
-        sql = "SELECT id, properties FROM whosonfirst WHERE %s" % where
+        sql = "SELECT id FROM whosonfirst WHERE %s" % where
 
         self.curs.execute(sql, params)
             
         for row in self.curs.fetchall():
             yield self.inflate(row)
-
-    def generate_hierarchy(self, feature, **kwargs):
-
-        properties = feature['properties']
-
-        # Note - see how we're special-casing this? That is so we can 
-        # still use this functionality when importing new records which
-        # may not have a WOF:ID yet (20150902/thisisaaronland)
-
-        wofid = properties.get('wof:id', None)
-        pt_key = "%s_id" % properties['wof:placetype']
-
-        hier = []
-
-        lat,lon = mapzen.whosonfirst.spatial.feature2reversegeo_coords(feature)
-
-        placetypes = mapzen.whosonfirst.spatial.feature2reversegeo_placetypes(feature)
-        possible = copy.deepcopy(placetypes)
-
-        features = []
-
-        while len(possible):
-
-            logging.debug("lookup hier for %s" % ",".join(possible))
-            
-            rsp = self.get_by_latlon_recursive(lat, lon, placetypes=possible)
-
-            for _feature in rsp:
-                _props = _feature['properties']
-                _hier = _props['wof:hierarchy']
-                
-                if len(_hier) > 0:
-                    features.append(_feature)
-
-            if len(features):
-                break
-
-            possible = possible[1:]
-
-        for pf in features:
-
-            pp = pf['properties']
-
-            if pp.get('wof:hierarchy', False):
-                ph = pp['wof:hierarchy']
-
-                # See this: First we're going to ensure
-                # that the actual feature ID/placetype is
-                # included. Next we're going to ensure
-                # that all the ancestors are included and
-                # flagged appropriately if missing
-                
-                for _h in ph:
-
-                    if wofid:
-                        _h[ pt_key ] = wofid
-                    else:
-                        _h[ pt_key ] = -1
-
-                    for p in placetypes:
-                        k = "%s_id" % p
-
-                        if not _h.has_key(k):
-                            _h[k] = -1
-
-                hier.extend(ph)
-
-        return hier
-
-    def append_hierarchy(self, feature):
-
-        hier = self.generate_hierarchy(feature)
-    
-        props = feature['properties']
-        props['wof:hierarchy'] = hier
-
-        feature['properties'] = props
-            
-    def append_hierarchy_and_parent(self, feature):
-
-        self.append_hierarchy(feature)
-
-        parent_id = -1
-        
-        props = feature['properties']
-        hier = props['wof:hierarchy']
-        count = len(hier)
-
-        if count == 0:
-            logging.warning("failed to assign hierarchy so there's nothing to derive parents from")
-                
-        elif count > 1:
-            logging.warning("too many parents to choose from")
-                
-        else:
-
-            h = hier[0]
-        
-            placetype = props['wof:placetype']
-            placetype = mapzen.whosonfirst.placetypes.placetype(placetype)
-                
-            # file under known-knowns : some (many?) venues may not have
-            # available neighbourhood polygons at the time of their import
-            # so rather than changing the placetype spec and allowing
-            # localities to parent venues we're just going to mark the 
-            # parent ID as -1 and deal with it later once we've imported
-            # more data (20150826/thisisaaronland)
-            
-            for p in placetype.parents():
-            
-                k = "%s_id" % p
-
-                if h.get(k, None):
-                    parent_id = h[k]
-                    break
-
-        props['wof:parent_id'] = parent_id
-        feature['properties'] = props
-
-    def inflate_hierarchies(self, hiers):
-
-        for h in hiers:
-            self.inflate_hierarchy(h)
-
-    def inflate_hierarchy(self, hier):
-
-        for k, v in hier.items():
-            placetype, ignore = k.split("_id")
-
-            feature = self.get_by_id(v)
-            props = feature['properties']
-            name = props['wof:name']
-
-            hier[placetype] = name
-
-    def inflate(self, row):
-
-        id, props = row
-        props = json.loads(props)
-
-        feature = {
-            'type': 'Feature',
-            'id': id,
-            'properties': props
-        }
-
-        return feature
-
-    # new untested stuff - translation:
-    # dunno... maybe... it's all still so new and shiny...
-    # (20150818/thisisaaronland)
 
     def breaches(self, data, **kwargs):
 
@@ -470,7 +238,7 @@ class query(db):
 
         where = " AND ".join(where)
 
-        sql = "SELECT id, properties FROM whosonfirst WHERE %s" % where    
+        sql = "SELECT id FROM whosonfirst WHERE %s" % where    
         self.curs.execute(sql, params)
             
         for row in self.curs.fetchall():
@@ -493,8 +261,12 @@ class query(db):
         data['geometry'] = geom
         return True
 
+    def inflate(self, row):
+        return row
+
 if __name__ == '__main__':
 
+    """
     import sys
     import optparse
 
@@ -555,3 +327,4 @@ if __name__ == '__main__':
         # db.inflate_hierarchies(hier)
 
         print "%s %s" % (props['wof:id'], props['wof:name'])
+    """
