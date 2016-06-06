@@ -6,6 +6,7 @@ import geojson
 import json
 import logging
 import uuid
+import time
 
 import mapzen.whosonfirst.placetypes
 
@@ -98,7 +99,13 @@ class db:
 
 class index(db):
 
+    """
+    def __init__ (self, dsn, **kwargs):
+        db.__init__(self, dsn, **kwargs)
+    """
+
     def import_feature(self, feature):
+
 
         geom = feature['geometry']
         props = feature['properties']
@@ -118,6 +125,8 @@ class index(db):
         str_geom = json.dumps(geom)
         
         dbid, conn, curs = self.get_dbconn()
+
+        t1 = time.time()
 
         try:
 
@@ -169,6 +178,12 @@ class index(db):
 
                 self.release_dbconn(dbid)
                 raise Exception, e
+
+        t2 = time.time()
+        tti = t2 - t1
+        
+        if tti >= 0.5:
+            logging.warning("time to index %s: %s" % (id, (t2 - t1)))
 
         self.release_dbconn(dbid)
         return True

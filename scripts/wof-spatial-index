@@ -4,6 +4,7 @@
 import sys
 import os.path
 import logging
+import time
 
 import mapzen.whosonfirst.utils
 import mapzen.whosonfirst.spatial
@@ -49,10 +50,10 @@ if __name__ == '__main__':
 
     def cb(feature):
 
-        if len(ignore):
+        props = feature['properties']
+        wofid = int(props.get('wof:id'))
 
-            props = feature['properties']
-            wofid = int(props.get('wof:id'))
+        if len(ignore):
 
             if wofid in ignore:
                 logging.info("WOF ID %s is in ignore list so... ignoring")
@@ -64,8 +65,16 @@ if __name__ == '__main__':
             logging.warning("Skipping the Earth because PostGIS is known to be weird about antipodal hoohah")
             return
 
+        t1 = time.time()
+
         idx.import_feature(feature)
 
+        t2 = time.time()
+        tti = t2 - t1
+
+        if tti > 0.5:
+            logging.warning("final time to index %s: %s (%s)" % (wofid, tti))
+  
     mapzen.whosonfirst.utils.crawl_with_callback(source, cb, inflate=True, multiprocessing=options.multiprocessing)
     sys.exit()
         
