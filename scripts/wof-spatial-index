@@ -73,7 +73,7 @@ if __name__ == '__main__':
         tti = t2 - t1
 
         if tti > 0.5:
-            logging.warning("final time to index %s: %s (%s)" % (wofid, tti))
+            logging.warning("final time to index %s: %s" % (wofid, tti))
   
     mapzen.whosonfirst.utils.crawl_with_callback(source, cb, inflate=True, multiprocessing=options.multiprocessing)
     sys.exit()
