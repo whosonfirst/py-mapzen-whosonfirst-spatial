@@ -5,6 +5,7 @@ import psycopg2
 import geojson
 import json
 import logging
+import uuid
 
 import mapzen.whosonfirst.placetypes
 
@@ -45,26 +46,52 @@ class db:
 
         self.dsn = dsn
 
-        self.conn = None
-        self.curs = None
+        self.max_conns = kwargs.get('max_conns', 50)
 
-        # "...so when using a module such as multiprocessing or a forking web deploy method such
-        # as FastCGI make sure to create the connections after the fork."
-        # http://initd.org/psycopg/docs/usage.html#thread-safety
+        self.conns = {}
 
-        if not kwargs.get('defer', False):
-            self.connect()
+    def get_dbconn(self):
+
+        for id, details in self.conns.items():
+
+            if details['available']:
+                self.conns[id]['available'] = False
+                
+                # logging.debug("return old dbconn %s" % id)
+                return id, details['conn'], details['curs']
+
+        current = len(self.conns.keys())
+
+        if current < self.max_conns:
+            id = str(uuid.uuid4())
+            conn, curs = self.connect()
+
+            details = {'available' : False, 'conn': conn, 'curs': curs}
+            self.conns[id] = details
+            
+            # logging.debug("return new dbconn %s" % id)
+            
+            return id, details['conn'], details['curs']
+
+        logging.warning("no available db conns... waiting")
+        time.sleep(1)
+
+        return self.get_dbconn()
+
+    def release_dbconn(self, id):
+
+        if not self.conns.get(id, False):
+            logging.warning("unable to find dbconn ID %s" % id)
+            return False
+
+        self.conns[id]['available'] = True
 
     def connect(self):
-
-        if self.conn:
-            return
 
         conn = psycopg2.connect(self.dsn)
         curs = conn.cursor()
 
-        self.conn = conn
-        self.curs = curs
+        return conn, curs
 
     def __del__(self):
         pass
@@ -90,6 +117,8 @@ class index(db):
 
         str_geom = json.dumps(geom)
         
+        dbid, conn, curs = self.get_dbconn()
+
         try:
 
             if geom['type'] == 'Point':
@@ -99,15 +128,15 @@ class index(db):
 
             params = (id, parent_id, placetype, str_geom)
             
-            self.curs.execute(sql, params)
-            self.conn.commit()
+            curs.execute(sql, params)
+            conn.commit()
 
             logging.debug("insert WOF:ID %s" % id)
 
         except psycopg2.IntegrityError, e:
 
             try:
-                self.conn.rollback()
+                conn.rollback()
                 
                 if geom['type'] == 'Point':
                     sql = "UPDATE whosonfirst SET parent_id=%s, placetype=%s, centroid=ST_GeomFromGeoJSON(%s) WHERE id=%s"
@@ -116,8 +145,8 @@ class index(db):
 
                 params = (parent_id, placetype, str_geom, id)
                 
-                self.curs.execute(sql, params)
-                self.conn.commit()
+                curs.execute(sql, params)
+                conn.commit()
                 
                 logging.debug("update WOF:ID %s" % id)
 
@@ -125,7 +154,9 @@ class index(db):
                 logging.error("failed to update WOF:ID %s, because %s" % (id, e))
                 logging.error(feature)
 
-                self.conn.rollback()
+                conn.rollback()
+
+                self.release_dbconn(dbid)
                 return False
 
                 # raise Exception, e
@@ -134,9 +165,12 @@ class index(db):
 
                 logging.error("failed to insert WOF:ID %s, because %s" % (id, e))
 
-                self.conn.rollback()
+                conn.rollback()
+
+                self.release_dbconn(dbid)
                 raise Exception, e
 
+        self.release_dbconn(dbid)
         return True
 
 class query(db):
@@ -152,13 +186,17 @@ class query(db):
         sql = "SELECT id, properties FROM whosonfirst WHERE id=%s"
         params = [id]
         
-        self.curs.execute(sql, params)
-        row = self.curs.fetchone()
+        dbid, conn, curs = self.get_dbconn()
+
+        curs.execute(sql, params)
+        row = curs.fetchone()
 
         if row:
             row = self.inflate(row)
 
         self.cache.set(cache_key, row)
+
+        self.release_dbconn(dbid)
         return row
                 
     def get_by_latlon(self, lat, lon, **kwargs):
@@ -179,10 +217,14 @@ class query(db):
 
         sql = "SELECT id FROM whosonfirst WHERE %s" % where
 
-        self.curs.execute(sql, params)
+        dbid, conn, curs = self.get_dbconn()
+
+        curs.execute(sql, params)
             
-        for row in self.curs.fetchall():
+        for row in curs.fetchall():
             yield self.inflate(row)
+
+        self.release_dbconn(dbid)
 
     def get_by_extent(self, swlat, swlon, nelat, nelon, **kwargs):
 
@@ -206,10 +248,13 @@ class query(db):
 
         sql = "SELECT id FROM whosonfirst WHERE %s" % where
 
-        self.curs.execute(sql, params)
+        dbid, conn, curs = self.get_dbconn()
+        curs.execute(sql, params)
             
-        for row in self.curs.fetchall():
+        for row in curs.fetchall():
             yield self.inflate(row)
+
+        self.release_dbconn(dbid)
 
     def breaches(self, data, **kwargs):
 
@@ -239,26 +284,35 @@ class query(db):
         where = " AND ".join(where)
 
         sql = "SELECT id FROM whosonfirst WHERE %s" % where    
-        self.curs.execute(sql, params)
+
+        dbid, conn, curs = self.get_dbconn()
+        curs.execute(sql, params)
             
-        for row in self.curs.fetchall():
+        for row in curs.fetchall():
             yield self.inflate(row)
+
+        self.release_dbconn(dbid)
 
     def append_geometry(self, data):
 
         sql = "SELECT ST_AsGeoJSON(geom) FROM whosonfirst WHERE id=%s"
         params = [data['id']]
         
-        self.curs.execute(sql, params)
-        row = self.curs.fetchone()
+        dbid, conn, curs = self.get_dbconn()
+        curs.execute(sql, params)
+
+        row = curs.fetchone()
 
         if not row:
+            self.release_dbconn(dbid)
             return False
 
         geom = row[0]
         geom = geojson.loads(geom)
             
         data['geometry'] = geom
+
+        self.release_dbconn(dbid)
         return True
 
     def inflate(self, row):

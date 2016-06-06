@@ -19,8 +19,7 @@ if __name__ == '__main__':
     opt_parser.add_option('-c', '--config', dest='config', action='store', default='None', help='')
     opt_parser.add_option('-S', '--section', dest='section', action='store', default='spatial', help='')
     opt_parser.add_option('-i', '--ignore', dest='ignore', action='store', default='', help='')
-
-    # something something something default config sections (20150731/thisisaaronland)
+    opt_parser.add_option('-m', '--multi', dest='multiprocessing', action='store_true', default=False, help='')
 
     opt_parser.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Be chatty (default is false)')
 
@@ -42,15 +41,13 @@ if __name__ == '__main__':
     idx = mapzen.whosonfirst.spatial.index(dsn)
 
     source = os.path.abspath(options.source)
-    crawl = mapzen.whosonfirst.utils.crawl(source, inflate=True)
-
     ignore = []
 
     if options.ignore != "":
         for id in options.ignore.split(","):
             ignore.append(int(id))
-            
-    for feature in crawl:
+
+    def cb(feature):
 
         if len(ignore):
 
@@ -59,15 +56,16 @@ if __name__ == '__main__':
 
             if wofid in ignore:
                 logging.info("WOF ID %s is in ignore list so... ignoring")
-                continue
+                return
 
         logging.debug("import feature %s" % feature.get('id', "UNKNOWN"))
 
         if feature.get('id', None) == 0:
             logging.warning("Skipping the Earth because PostGIS is known to be weird about antipodal hoohah")
-            continue
+            return
 
         idx.import_feature(feature)
 
+    mapzen.whosonfirst.utils.crawl_with_callback(source, cb, inflate=True, multiprocessing=options.multiprocessing)
     sys.exit()
         
