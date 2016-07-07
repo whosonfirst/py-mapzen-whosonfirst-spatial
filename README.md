@@ -9,7 +9,7 @@ own.
 
 ## Importing data
 
-There is already a handy `import.py` script for importing a directory full of files (like say, maybe... [whosonfirst-data](https://github.com/mapzen/whosonfirst-data)) and basically all it is doing is this:
+There is already a handy [wof-spatial-index](scripts/wof-spatial-index) script for importing a directory full of files (like say, maybe... [whosonfirst-data](https://github.com/mapzen/whosonfirst-data)) and basically all it is doing is this:
 
 ```
 import mapzen.whosonfirst.spatial
