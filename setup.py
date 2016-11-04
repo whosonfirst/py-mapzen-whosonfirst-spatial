@@ -20,7 +20,7 @@ version = open("VERSION").read()
 
 setup(
     name='mapzen.whosonfirst.spatial',
-    namespace_packages=['mapzen', 'mapzen.whosonfirst', 'mapzen.whosonfirst.spatial'],
+    namespace_packages=['mapzen', 'mapzen.whosonfirst'],
     version=version,
     description='Simple Python wrapper for Who\'s On First spatial functionality',
     author='Mapzen',
