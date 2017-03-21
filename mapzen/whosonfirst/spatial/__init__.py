@@ -47,7 +47,7 @@ class db:
 
         self.dsn = dsn
 
-        self.max_conns = kwargs.get('max_conns', 50)
+        self.max_conns = kwargs.get('max_conns', 200)
 
         self.conns = {}
 
