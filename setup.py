@@ -25,14 +25,6 @@ setup(
     description='Simple Python wrapper for Who\'s On First spatial functionality',
     author='Mapzen',
     url='https://github.com/whosonfirst/py-mapzen-whosonfirst-spatial',
-    install_requires=[
-        # 'psycopg2',
-        'geojson',
-        'mapzen.whosonfirst.utils>=0.18',
-        ],
-    dependency_links=[
-        'https://github.com/whosonfirst/py-mapzen-whosonfirst-utils/tarball/master#egg=mapzen.whosonfirst.utils-0.18',
-        ],
     packages=packages,
     scripts=[
         'scripts/wof-spatial-index',

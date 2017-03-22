@@ -1,5 +1,11 @@
 # py-mapzen-whosonfirst-spatial
 
+## Install
+
+```
+sudo pip install -r requirements.txt .
+```
+
 ## IMPORTANT
 
 This library is provided as-is, right now. It lacks proper
