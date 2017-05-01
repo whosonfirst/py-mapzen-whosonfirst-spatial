@@ -1,2 +1,0 @@
-geojson
-https://github.com/whosonfirst/py-mapzen-whosonfirst-utils
