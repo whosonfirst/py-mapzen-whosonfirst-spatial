@@ -1,9 +1,10 @@
 import mapzen.whosonfirst.spatial
-
 import logging
 
 import json
 import psycopg2
+
+# see also: https://github.com/whosonfirst/go-whosonfirst-pgis
 
 class postgis(mapzen.whosonfirst.spatial.base):
 
