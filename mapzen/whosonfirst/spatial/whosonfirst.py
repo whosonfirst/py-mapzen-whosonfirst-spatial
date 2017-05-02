@@ -21,15 +21,18 @@ class pip (mapzen.whosonfirst.spatial.base):
 
     def point_in_polygon(self, lat, lon, **kwargs):
 
+        filters = kwargs.get("filters", {})
+
+        params = { "latitude": lat, "longitude": lon }
+
+        if filters.get("wof:placetype_id", None):
+            pt = mapzen.whosonfirst.placetypes.placetype(filters["wof:placetype_id"])
+            params["placetype"] = str(pt)
+
         endpoint = "%s://%s" % (self.scheme, self.hostname)
 
         if self.port:
-            endpoint = "%s:%s" % (endpoint, self.port)
-
-        params = { "latitude": lat, "longitude": lon }
-        
-        for k, v in kwargs.items():
-            params[k] = v
+            endpoint = "%s:%s" % (endpoint, self.port)        
 
         rsp = requests.get(endpoint, params=params)
         data = json.loads(rsp.content)
