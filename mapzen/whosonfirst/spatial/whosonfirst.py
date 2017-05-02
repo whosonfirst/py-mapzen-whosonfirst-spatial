@@ -34,8 +34,12 @@ class pip (mapzen.whosonfirst.spatial.base):
         if self.port:
             endpoint = "%s:%s" % (endpoint, self.port)        
 
-        rsp = requests.get(endpoint, params=params)
-        data = json.loads(rsp.content)
+        try:
+            rsp = requests.get(endpoint, params=params)
+            data = json.loads(rsp.content)
+        except Exception, e:
+            logging.error("failed to PIP with %s (%s) because %s" % (endpoint, params, e))
+            return
 
         for row in data:
 
