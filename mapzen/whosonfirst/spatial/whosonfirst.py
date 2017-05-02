@@ -124,6 +124,10 @@ class api (mapzen.whosonfirst.spatial.base):
 
             yield row
 
+    # intersects - we could call 'whosonfirst.places.getIntersects' here but
+    # since that only does bounding boxes it's likely to confuse things since
+    # the postgis one assumes polygons... (20170502/thisisaaronland)
+
     def row_to_feature(self, row):
 
         wofid = row["wof:id"]
