@@ -84,7 +84,7 @@ class api (mapzen.whosonfirst.spatial.base):
 
         mapzen.whosonfirst.spatial.base.__init__(self, **kwargs)
 
-        self.hostname = kwargs.get('hostname', 'http://whosonfirst-api.mapzen.com')
+        self.endpoint = kwargs.get('endpoint', 'http://whosonfirst-api.mapzen.com')
         self.api_key = kwargs.get('api_key', None)
 
         self.data_root = kwargs.get("data_root", "https://whosonfirst.mapzen.com")
@@ -114,7 +114,7 @@ class api (mapzen.whosonfirst.spatial.base):
             data = json.loads(rsp.content)
 
         except Exception, e:
-            logging.error("failed to PIP with %s (%s) because %s" % (endpoint, params, e))
+            logging.error("failed to PIP with %s (%s) because %s" % (self.endpoint, params, e))
             return
 
         for row in data["places"] :
