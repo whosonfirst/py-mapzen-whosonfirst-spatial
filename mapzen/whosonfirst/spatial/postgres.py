@@ -61,15 +61,8 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         for row in self.curs.fetchall():
 
-            """
             if kwargs.get("as_feature", False):
-
-                try:
-                    row = self.row_to_feature(row)
-                except Exception, e:
-                    logging.error("failed to point in polygon for %s because %s" % (row[0], e))
-                    continue
-            """
+                row = self.row_to_feature(row)
 
             yield row
         

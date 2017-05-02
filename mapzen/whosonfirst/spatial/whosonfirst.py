@@ -1,6 +1,9 @@
 import mapzen.whosonfirst.spatial
+import mapzen.whosonfirst.placetypes
+import mapzen.whosonfirst.utils
 
 import logging
+import os
 import json
 import requests
 
@@ -13,6 +16,8 @@ class pip (mapzen.whosonfirst.spatial.base):
         self.scheme = kwargs.get('scheme', 'https')
         self.hostname = kwargs.get('hostname', 'pip.mapzen.com')
         self.port = kwargs.get('port', None)
+
+        self.data_root = kwargs.get("data_root", "https://whosonfirst.mapzen.com")
 
     def point_in_polygon(self, lat, lon, **kwargs):
 
@@ -27,28 +32,34 @@ class pip (mapzen.whosonfirst.spatial.base):
             params[k] = v
 
         rsp = requests.get(endpoint, params=params)
-
         data = json.loads(rsp.content)
 
         for row in data:
+
+            if kwargs.get("as_feature", False):
+                row = self.row_to_feature(row)
+
             yield row
 
     def row_to_feature(self, row):
 
+        # this is what we have to work with... today (20170502/thisisaaronland)
         # {u'Name': u'Utah', u'Deprecated': False, u'Superseded': False, u'Placetype': u'region', u'Offset': -1, u'Id': 85688567}
 
-        geom = {}
+        wofid = row["Id"]
 
-        props = {
-            "wof:id": row['Id'],
-            "wof:name": row['Name'],
-            "wof:placetype": row['Placetype'],
-        }
+        root = self.data_root
 
-        feature = {
-            "type": "Feature",
-            "geometry": geom,
-            "properties": props,
-        }
+        # please fix me (as in work out the details)
+        # (20170502/thisisaaronland)
 
-        return feature
+        """
+        repo = row.get("wof:repo", None)
+
+        if repo:
+            root = os.path.join(root, repo)
+        """
+
+        root = os.path.join(root, "data")
+
+        return mapzen.whosonfirst.utils.load(root, wofid)
