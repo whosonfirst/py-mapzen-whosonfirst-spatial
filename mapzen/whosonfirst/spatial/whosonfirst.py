@@ -77,3 +77,62 @@ class pip (mapzen.whosonfirst.spatial.base):
         root = os.path.join(root, "data")
 
         return mapzen.whosonfirst.utils.load(root, wofid)
+
+class api (mapzen.whosonfirst.spatial.base):
+
+    def __init__(self, **kwargs):
+
+        mapzen.whosonfirst.spatial.base.__init__(self, **kwargs)
+
+        self.hostname = kwargs.get('hostname', 'http://whosonfirst-api.mapzen.com')
+        self.api_key = kwargs.get('api_key', None)
+
+        self.data_root = kwargs.get("data_root", "https://whosonfirst.mapzen.com")
+
+    def point_in_polygon(self, lat, lon, **kwargs):
+
+        filters = kwargs.get("filters", {})
+
+        params = {
+            "api_key": self.api_key,
+            "method": "whosonfirst.places.getByLatLon",
+            "latitude": lat,
+            "longitude": lon,
+        }
+
+        if filters.get("wof:placetype_id", None):
+            pt = mapzen.whosonfirst.placetypes.placetype(filters["wof:placetype_id"])
+            params["placetype"] = str(pt)
+
+        try:
+
+            rsp = requests.get(self.endpoint, params=params)
+
+            if rsp.status_code != requests.codes.ok:
+                rsp.raise_for_status()
+
+            data = json.loads(rsp.content)
+
+        except Exception, e:
+            logging.error("failed to PIP with %s (%s) because %s" % (endpoint, params, e))
+            return
+
+        for row in data["places"] :
+
+            if kwargs.get("as_feature", False):
+                row = self.row_to_feature(row)
+
+            yield row
+
+    def row_to_feature(self, row):
+
+        wofid = row["wof:id"]
+        repo = row["wof:repo"]
+
+        root = self.data_root
+
+        # please sort out using repo when fetching local files
+
+        root = os.path.join(root, "data")
+
+        return mapzen.whosonfirst.utils.load(root, wofid)
