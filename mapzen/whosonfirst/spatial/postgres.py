@@ -1,14 +1,20 @@
 import mapzen.whosonfirst.spatial
-import logging
+import mapzen.whosonfirst.placetypes
 
+import logging
 import json
+
+# basically if you're going to have to install psycopg2 then installing
+# shapely shouldn't be a big deal either... (20170502/thisisaaronland)
+
 import psycopg2
+import shapely.geometry
 
 # see also: https://github.com/whosonfirst/go-whosonfirst-pgis
 
 class postgis(mapzen.whosonfirst.spatial.base):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
 
         self.debug = kwargs.get("debug", False)
 
@@ -24,7 +30,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         self.curs = conn.cursor()
 
-    def point_in_polygon(self, lat, lon, placetype, **kwargs):
+    def point_in_polygon(self, lat, lon, **kwargs):
 
         centroid = { 'type': 'Point', 'coordinates': [ lon, lat ] }
         str_centroid = json.dumps(centroid)
@@ -211,3 +217,50 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         return where, tuple(params)
         
+    def row_to_feature(self, row, **kwargs):
+
+        wofid, parent_id, placetype_id, meta, geom, centroid = row
+
+        props = json.loads(meta)
+
+        if geom:
+
+            try:
+                geom = json.loads(geom)
+            except Exception, e:
+                logging.warning("failed to parse geom (%s) for %s, because %s" % (geom, wofid, e))
+
+        if centroid:
+
+            try:
+                centroid = json.loads(centroid)
+                lon, lat = centroid['coordinates']
+            except Exception, e:
+                logging.warning("failed to parse centroid (%s) for %s, because %s" % (centroid, wofid, e))
+
+        if not geom and not centroid:
+
+            logging.error("can't parse either geom or centroid xxxx")
+            raise Exception, "bunk geometry for %s" % wofid
+
+        if not geom:
+            geom = centroid
+
+        if not centroid:
+
+            shp = shapely.geometry.asShape(geom)
+            coords = shp.centroid
+
+            lat = coords.y
+            lon = coords.x
+
+        pt = mapzen.whosonfirst.placetypes.placetype(placetype_id)
+
+        props['wof:id'] = wofid
+        props['wof:parent_id'] = parent_id
+        props['wof:placetype'] = str(pt)
+
+        props['geom:latitude'] = lat
+        props['geom:longitude'] = lon
+
+        return { 'type': 'Feature', 'geometry': geom, 'properties': props }
