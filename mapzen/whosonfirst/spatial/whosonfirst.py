@@ -5,6 +5,7 @@ import mapzen.whosonfirst.utils
 import logging
 import os
 import json
+
 import requests
 
 class pip (mapzen.whosonfirst.spatial.base):
@@ -35,8 +36,14 @@ class pip (mapzen.whosonfirst.spatial.base):
             endpoint = "%s:%s" % (endpoint, self.port)        
 
         try:
+
             rsp = requests.get(endpoint, params=params)
+
+            if rsp.status_code != requests.codes.ok:
+                rsp.raise_for_status()
+
             data = json.loads(rsp.content)
+
         except Exception, e:
             logging.error("failed to PIP with %s (%s) because %s" % (endpoint, params, e))
             return
