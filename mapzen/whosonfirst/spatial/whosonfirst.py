@@ -24,7 +24,10 @@ class pip (mapzen.whosonfirst.spatial.base):
 
         filters = kwargs.get("filters", {})
 
-        params = { "latitude": lat, "longitude": lon }
+        params = {
+            "latitude": lat,
+            "longitude": lon
+        }
 
         if filters.get("wof:placetype_id", None):
             pt = mapzen.whosonfirst.placetypes.placetype(filters["wof:placetype_id"])
@@ -45,8 +48,9 @@ class pip (mapzen.whosonfirst.spatial.base):
             data = json.loads(rsp.content)
 
         except Exception, e:
+
             logging.error("failed to PIP with %s (%s) because %s" % (endpoint, params, e))
-            return
+            raise Exception, e
 
         for row in data:
 
@@ -114,8 +118,9 @@ class api (mapzen.whosonfirst.spatial.base):
             data = json.loads(rsp.content)
 
         except Exception, e:
+
             logging.error("failed to PIP with %s (%s) because %s" % (self.endpoint, params, e))
-            return
+            raise Exception, e
 
         for row in data["places"] :
 
