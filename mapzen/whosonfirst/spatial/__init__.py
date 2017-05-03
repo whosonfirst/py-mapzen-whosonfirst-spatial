@@ -3,7 +3,7 @@ class base:
     def __init__(self, **kwargs):
         pass
 
-    def point_in_polygon(self, lat, lon, placetype, **kwargs):
+    def point_in_polygon(self, lat, lon, **kwargs):
         raise Exception, "Method 'point_in_polygon' not implemented by this class."
 
     def intersects(self, feature, **kwargs):

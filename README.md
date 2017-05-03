@@ -2,7 +2,27 @@
 
 Too soon. Everything is changing. Move along.
 
-## Example
+## Interface
+
+### point_in_polygon(self, lat, lon, **kwargs)
+
+### intersects(self, feature, **kwargs)
+
+### intersects_paginated(self, feature, **kwargs)
+
+### row_to_feature(self, feature, **kargs)
+
+### index_feature(self, feature, **kwargs)
+
+## Clients
+
+### mapzen.whosonfirst.spatial.postgres.postgis
+
+### mapzen.whosonfirst.spatial.whosonfirst.api
+
+### mapzen.whosonfirst.spatial.whosonfirst.pip
+
+## Usage
 
 ## Basic
 
@@ -10,17 +30,17 @@ Too soon. Everything is changing. Move along.
 import mapzen.whosonfirst.spatial.whosonfirst
 import mapzen.whosonfirst.spatial.postgres
 
-wof_pip = mapzen.whosonfirst.spatial.whosonfirst.pip()
-pg_pip = mapzen.whosonfirst.spatial.postgres.postgis()
+pip_client = mapzen.whosonfirst.spatial.whosonfirst.pip()
+pg_client = mapzen.whosonfirst.spatial.postgres.postgis()
 
-for row in wof_pip.point_in_polygon(40.661367, -111.500959):
-    f = wof_pip.row_to_feature(row)
+for row in pip_client.point_in_polygon(40.661367, -111.500959):
+    f = pip_client.row_to_feature(row)
     print f["properties"]
 
 print "--"
 
-for row in pg_pip.point_in_polygon(40.661367, -111.500959):
-    f = pg_pip.row_to_feature(row)
+for row in pg_client.point_in_polygon(40.661367, -111.500959):
+    f = pg_client.row_to_feature(row)
     print f["properties"]
 ```
 
