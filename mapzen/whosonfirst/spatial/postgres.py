@@ -1,8 +1,11 @@
 import mapzen.whosonfirst.spatial
+import mapzen.whosonfirst.uri
 import mapzen.whosonfirst.placetypes
 
+import os
 import logging
 import json
+import subprocess
 
 # basically if you're going to have to install psycopg2 then installing
 # shapely shouldn't be a big deal either... (20170502/thisisaaronland)
@@ -148,6 +151,81 @@ class postgis(mapzen.whosonfirst.spatial.base):
                 yield row
 
             page += 1
+
+    def index_feature(self, feature, **kwargs):
+
+        # please implement me in python below... maybe?
+        # (20170503/thisisaaronland)
+
+        index_tool = kwargs.get("index_tool", "/usr/local/bin/wof-pgis-index")
+
+        data_root = kwargs.get("data_root", None)
+        debug = kwargs.get("debug", False)
+
+        if data_root == None:
+            raise Exception, "You forgot to set data_root in the constructor"
+
+        props = feature["properties"]
+        repo = props["wof:repo"]
+
+        root = os.path.join(data_root, repo)
+        data = os.path.join(root, "data")
+
+        wofid = props["wof:id"]
+        path = mapzen.whosonfirst.uri.id2abspath(data, wofid)
+
+        cmd = [
+            index_tool
+        ]
+
+        if debug:
+            cmd.append("-debug")
+
+        cmd.extend([
+            "-mode", "files",
+            path
+        ])
+    
+        logging.info(" ".join(cmd))
+        
+        out = subprocess.check_output(cmd)
+        logging.debug(out)
+
+        return repo
+
+        """
+        geom = feature['properties']
+        props = feature['properties']
+
+        wofid = props['wof:id']
+        parent_id = props['wof:parent_id']
+
+        pt = mapzen.whosonfirst.placetypes.placetype(props['wof:placetype'])
+        placetype_id = pt.id()
+
+        name = props['wof:name']
+        country = props.get('wof:country', 'XX')
+        repo = props['wof:repo']
+        hier = props.get('wof:hierarchy', [])
+
+        is_superseded = 0
+        is_deprecated = 0
+
+        if len(props.get('wof:superseded_by', [])):
+            is_superseded = 1
+
+        if not props.get('etdf:deprecated', '') in ('', 'uuuu'):
+            is_deprecated = 1
+
+        meta = {
+            'wof:hierarchy': hier,
+            'wof:repo': repo,
+            'wof:name': name,
+            'wof:country': country,
+        }
+
+        pass
+        """
 
     def _where (self, feature, **kwargs): 
 

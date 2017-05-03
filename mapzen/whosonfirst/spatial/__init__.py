@@ -14,3 +14,6 @@ class base:
 
     def row_to_feature(self, row, **kwargs):
         raise Exception, "Method 'row_to_feature' not implemented by this class."
+
+    def index_feature(self, feature, **kwargs):
+        raise Exception, "Method 'index_feature' not implemented by this class."
