@@ -4,23 +4,42 @@ Too soon. Everything is changing. Move along.
 
 ## Interface
 
+First of all, we're using the term "interface" loosely here. I don't _think_ Python has interfaces so what we're really talking about are the methods defined in `mapzen.whosonfirst.spatial.base` class. This class is then subclassed by "client" (discussed below) who override them, since they all raise an exception by default. Ideally each client would implement every method but in reality they won't for a variety of reasons.
+
+
 ### point_in_polygon(self, lat, lon, **kwargs)
+
+Perform a point in polygon query, with 0 or more optional filters.
 
 ### intersects(self, feature, **kwargs)
 
+Return all the things that intersect with `feature`, with 0 or more optional filters.
+
 ### intersects_paginated(self, feature, **kwargs)
+
+Return all the things that intersect with `feature`, with 0 or more optional filters. Take care of paginating the results. Pagination details are left to the discretion of individual clients.
 
 ### row_to_feature(self, feature, **kargs)
 
+Convert a client's internal representation in to a proper GeoJSON `Feature` thingy. Ideally it would be the actual Who's On First record but that's still a bit squishy as of this wriging.
+
 ### index_feature(self, feature, **kwargs)
+
+Index `feature` in the client's data store. Practically speaking this is still pretty specific to the PostGIS client right now but that may change.
 
 ## Clients
 
 ### mapzen.whosonfirst.spatial.postgres.postgis
 
+This implements all of "base" interface assuming a PostGIS database. All of this code is interwoven with code in the [go-whosonfirst-pgis](https://github.com/whosonfirst/go-whosonfirst-pgis) package which we use for indexing (because it's faster than doing in Python). As of this writing that package is where the database schema is defined.
+
 ### mapzen.whosonfirst.spatial.whosonfirst.api
 
+Currently this implements the `point_in_polygon` and `row_to_feature` interfaces using the [Who's On First API](https://mapzen.com/documentation/wof/methods/#whosonfirstplaces).
+
 ### mapzen.whosonfirst.spatial.whosonfirst.pip
+
+Currently this implements the `point_in_polygon` and `row_to_feature` interfaces using the [Who's On First PIP server](https://github.com/whosonfirst/go-whosonfirst-pip).
 
 ## Usage
 
@@ -63,3 +82,5 @@ This would print:
 {u'wof:repo': u'whosonfirst-data', 'geom:longitude': -111.878816, 'geom:latitude': 39.098999, u'wof:name': u'Utah', 'wof:placetype': 'region', u'wof:country': u'US', 'wof:parent_id': 85633793L, u'wof:hierarchy': [{u'continent_id': 102191575, u'country_id': 85633793, u'region_id': 85688567}], 'wof:id': 85688567L}
 {u'wof:repo': u'whosonfirst-data', 'geom:longitude': -111.496653, 'geom:latitude': 40.64482, u'wof:name': u'Park City', 'wof:placetype': 'locality', u'wof:country': u'US', 'wof:parent_id': 102083555L, u'wof:hierarchy': [{u'continent_id': 102191575, u'locality_id': 101727553, u'country_id': 85633793, u'region_id': 85688567, u'county_id': 102083555}], 'wof:id': 101727553L}
 ```
+
+## See also
