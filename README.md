@@ -6,7 +6,6 @@ Too soon. Everything is changing. Move along.
 
 First of all, we're using the term "interface" loosely here. I don't _think_ Python has interfaces so what we're really talking about are the methods defined in `mapzen.whosonfirst.spatial.base` class. This class is then subclassed by "client" (discussed below) who override them, since they all raise an exception by default. Ideally each client would implement every method but in reality they won't for a variety of reasons.
 
-
 ### point_in_polygon(self, lat, lon, **kwargs)
 
 Perform a point in polygon query, with 0 or more optional filters.
@@ -28,6 +27,8 @@ Convert a client's internal representation in to a proper GeoJSON `Feature` thin
 Index `feature` in the client's data store. Practically speaking this is still pretty specific to the PostGIS client right now but that may change.
 
 ## Clients
+
+We index and query spatial data in a variety of ways both to keep us honest and because different circumstances have different constraints and burdens. Ideally we'd like to arrive at a place where every index would store (or at least return) the same data, at least in so far as consumers are concerned. We're not quite there yet.
 
 ### mapzen.whosonfirst.spatial.postgres.postgis
 
@@ -82,5 +83,7 @@ This would print:
 {u'wof:repo': u'whosonfirst-data', 'geom:longitude': -111.878816, 'geom:latitude': 39.098999, u'wof:name': u'Utah', 'wof:placetype': 'region', u'wof:country': u'US', 'wof:parent_id': 85633793L, u'wof:hierarchy': [{u'continent_id': 102191575, u'country_id': 85633793, u'region_id': 85688567}], 'wof:id': 85688567L}
 {u'wof:repo': u'whosonfirst-data', 'geom:longitude': -111.496653, 'geom:latitude': 40.64482, u'wof:name': u'Park City', 'wof:placetype': 'locality', u'wof:country': u'US', 'wof:parent_id': 102083555L, u'wof:hierarchy': [{u'continent_id': 102191575, u'locality_id': 101727553, u'country_id': 85633793, u'region_id': 85688567, u'county_id': 102083555}], 'wof:id': 101727553L}
 ```
+
+_The example response for the `pip_client` is actually a bit misleading. As of this writing it has been taught to fetch the source WOF record over the network so there is a lot more data. That's what it would look like if it didn't make a network request._
 
 ## See also
