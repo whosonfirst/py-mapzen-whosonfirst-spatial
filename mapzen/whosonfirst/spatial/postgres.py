@@ -48,8 +48,6 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         filters = kwargs.get("filters", {})
 
-        print "WHAT %s" % filters
-
         for k, v in filters.items():
 
             k = k.replace("wof:", "")
