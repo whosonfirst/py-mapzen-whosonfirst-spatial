@@ -2,6 +2,7 @@ import mapzen.whosonfirst.spatial
 import mapzen.whosonfirst.uri
 import mapzen.whosonfirst.placetypes
 
+import math
 import os
 import logging
 import json
