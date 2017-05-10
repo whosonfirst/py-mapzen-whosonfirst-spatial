@@ -58,7 +58,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         params = tuple(params)
 
-        sql = "SELECT id, parent_id, placetype_id, meta, ST_AsGeoJSON(geom), ST_AsGeoJSON(centroid) FROM whosonfirst WHERE " + " AND ".join(where)
+        sql = "SELECT id, parent_id, placetype_id, meta, ST_AsGeoJSON(geom), ST_AsGeoJSON(centroid) FROM whosonfirst WHERE " + " AND " . join(where)
         logging.debug(sql)
 
         self.curs.execute(sql, params)
@@ -79,7 +79,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         where, params = self._where(feature, **kwargs)
 
-        sql = "SELECT id, parent_id, placetype_id, meta, ST_AsGeoJSON(geom), ST_AsGeoJSON(centroid) FROM whosonfirst WHERE " + " AND ".join(where)
+        sql = "SELECT id, parent_id, placetype_id, meta, ST_AsGeoJSON(geom), ST_AsGeoJSON(centroid) FROM whosonfirst WHERE " + " AND " . join(where)
 
         # OMG PLEASE MAKE THIS BETTER SOMEHOW...
 
@@ -260,7 +260,6 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
             geom = feature['geometry']
             str_geom = json.dumps(geom)
-            
 
             if kwargs.get("buffer", None):
 
