@@ -120,13 +120,15 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         where, params = self._where(feature, **kwargs)
 
-        sql = "SELECT COUNT(id) FROM whosonfirst WHERE " + " AND ".join(where)
+        sql = "SELECT COUNT(id) FROM whosonfirst WHERE " + " AND " . join(where)
 
         logging.debug(sql)
 
         self.curs.execute(sql, params)
-
         row = self.curs.fetchone()
+
+        logging.debug("status %s" % self.curs.statusmessage)
+
         count = row[0]
 
         page_count = 1
@@ -282,6 +284,8 @@ class postgis(mapzen.whosonfirst.spatial.base):
         for k, v in filters.items():
 
             k = k.replace("wof:", "")
+
+            logging.debug("filter %s=%s" % (k, v))
 
             where.append("%s=" % k + "%s")
             params.append(v)
