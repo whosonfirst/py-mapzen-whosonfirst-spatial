@@ -161,7 +161,6 @@ class postgis(mapzen.whosonfirst.spatial.base):
         # (20170503/thisisaaronland)
 
         index_tool = kwargs.get("index_tool", "/usr/local/bin/wof-pgis-index")
-
         data_root = kwargs.get("data_root", None)
         debug = kwargs.get("debug", False)
 
@@ -196,40 +195,6 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         return repo
 
-        """
-        geom = feature['properties']
-        props = feature['properties']
-
-        wofid = props['wof:id']
-        parent_id = props['wof:parent_id']
-
-        pt = mapzen.whosonfirst.placetypes.placetype(props['wof:placetype'])
-        placetype_id = pt.id()
-
-        name = props['wof:name']
-        country = props.get('wof:country', 'XX')
-        repo = props['wof:repo']
-        hier = props.get('wof:hierarchy', [])
-
-        is_superseded = 0
-        is_deprecated = 0
-
-        if len(props.get('wof:superseded_by', [])):
-            is_superseded = 1
-
-        if not props.get('etdf:deprecated', '') in ('', 'uuuu'):
-            is_deprecated = 1
-
-        meta = {
-            'wof:hierarchy': hier,
-            'wof:repo': repo,
-            'wof:name': name,
-            'wof:country': country,
-        }
-
-        pass
-        """
-
     def _where (self, feature, **kwargs): 
 
         where = []
@@ -263,7 +228,27 @@ class postgis(mapzen.whosonfirst.spatial.base):
             geom = feature['geometry']
             str_geom = json.dumps(geom)
 
-            if kwargs.get("buffer", None):
+            params = [
+                str_geom
+            ]
+
+            if kwargs.get("check_centroid", None) and kwargs.get("buffer", None):
+
+                where = [
+                    "(ST_Intersects(ST_Buffer(ST_GeomFromGeoJSON(%s), " + str(kwargs.get("buffer")) + "), geom) OR ST_Intersects(ST_Buffer(ST_GeomFromGeoJSON(%s), " + str(kwargs.get("buffer")) + "), geom))"
+                ]
+
+                params.append(str_geom)
+
+            elif kwargs.get("check_centroid", None):
+
+                where = [
+                    "(ST_Intersects(ST_GeomFromGeoJSON(%s), geom) OR ST_Intersects(ST_GeomFromGeoJSON(%s), centroid))",
+                ]
+
+                params.append(str_geom)
+
+            elif kwargs.get("buffer", None):
 
                 where = [
                     "ST_Intersects(ST_Buffer(ST_GeomFromGeoJSON(%s), " + str(kwargs.get("buffer")) + "), geom)",
@@ -274,10 +259,6 @@ class postgis(mapzen.whosonfirst.spatial.base):
                 where = [
                     "ST_Intersects(ST_GeomFromGeoJSON(%s), geom)",
                 ]
-
-            params = [
-                str_geom
-            ]
 
         filters = kwargs.get("filters", {})
 
