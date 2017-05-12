@@ -1,6 +1,6 @@
 # py-mapzen-whosonfirst-spatial
 
-Too soon. Everything is changing. Move along.
+Python library for working with spatial databases (and services) and Who's On First documents.
 
 ## Interface
 
@@ -87,3 +87,5 @@ This would print:
 _The example response for the `pip_client` is actually a bit misleading. As of this writing it has been taught to fetch the source WOF record over the network so there is a lot more data. That's what it would look like if it didn't make a network request._
 
 ## See also
+
+* https://github.com/whosonfirst/py-mapzen-whosonfirst-hierarchy
