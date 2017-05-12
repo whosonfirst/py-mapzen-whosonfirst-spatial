@@ -2,7 +2,23 @@
 
 Python library for working with spatial databases (and services) and Who's On First documents.
 
-## Interface
+## Install
+
+```
+sudo pip install -r requirements.txt .
+```
+
+### Caveats
+
+In an effort to make using this library in as broad a fashion as possible specific dependencies for the PostGIS "interfaces" have been excluded from the package's `requirements.txt` file because they depend on a whole bunch of stuff that involves extra work to install. So you will need to do that yourself in order to get stuff to work:
+
+```
+sudo pip install psycopg2 shapely
+```
+
+It's not ideal and if there's a way to add these as "try to install these but don't freak out if it fails" dependencies to the `requirements.txt` file we'd love to hear about it.
+
+## Interfaces
 
 First of all, we're using the term "interface" loosely here. I don't _think_ Python has interfaces so what we're really talking about are the methods defined in `mapzen.whosonfirst.spatial.base` class. This class is then subclassed by "client" (discussed below) who override them, since they all raise an exception by default. Ideally each client would implement every method but in reality they won't for a variety of reasons.
 
