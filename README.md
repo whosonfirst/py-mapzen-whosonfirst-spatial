@@ -102,6 +102,10 @@ This would print:
 
 _The example response for the `pip_client` is actually a bit misleading. As of this writing it has been taught to fetch the source WOF record over the network so there is a lot more data. That's what it would look like if it didn't make a network request._
 
+## Notes
+
+This package was substantially different once upon a time. If you're look for the old code there is a [snapshot release of it dated 20170512](https://github.com/whosonfirst/py-mapzen-whosonfirst-spatial/releases/tag/20170512).
+
 ## See also
 
 * https://github.com/whosonfirst/py-mapzen-whosonfirst-hierarchy
