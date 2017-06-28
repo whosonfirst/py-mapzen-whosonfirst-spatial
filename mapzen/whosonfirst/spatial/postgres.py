@@ -22,17 +22,17 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         self.debug = kwargs.get("debug", False)
 
-        dbname = kwargs.get("dbname", "whosonfirst")
-        username = kwargs.get("username", "whosonfirst")
-        password = kwargs.get("password", "")
-        host = kwargs.get("host", "localhost")
+        self.pg_database = kwargs.get("dbname", "whosonfirst")
+        self.pg_username = kwargs.get("username", "whosonfirst")
+        self.pg_password = kwargs.get("password", None)
+        self.pg_host = kwargs.get("host", "localhost")
 
         # https://pythonhosted.org/psycopg2/
 
-        dsn = "dbname=%s user=%s host=%s" % (dbname, username, host)
+        dsn = "dbname=%s user=%s host=%s" % (self.pg_database, self.pg_username, self.pg_host)
 
-        if password != "":
-            dsn = "%s password=%s" % (dsn, password)
+        if self.pg_password:
+            dsn = "%s password=%s" % (dsn, self.pg_password)
 
         conn = psycopg2.connect(dsn)
 
@@ -181,9 +181,18 @@ class postgis(mapzen.whosonfirst.spatial.base):
         path = mapzen.whosonfirst.uri.id2abspath(data, wofid)
 
         cmd = [
-            index_tool
+            index_tool,
+            "-pgis-database", self.pg_database,
+            "-pgis-host", self.pg_host,
+            "-pgis-user", self.pg_username,
         ]
 
+        if self.pg_password:
+
+            cmd.extend([
+                "-pgis-password", self.pg_password
+            ])
+        
         if debug:
             cmd.append("-debug")
 
