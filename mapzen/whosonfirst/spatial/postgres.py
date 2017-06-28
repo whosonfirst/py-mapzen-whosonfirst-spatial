@@ -29,7 +29,11 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         # https://pythonhosted.org/psycopg2/
 
-        dsn = "dbname=%s user=%s password=%s host=%s" % (dbname, username, password, host)
+        dsn = "dbname=%s user=%s host=%s" % (dbname, username, host)
+
+        if password != "":
+            dsn = "%s password=%s" % (dsn, password)
+
         conn = psycopg2.connect(dsn)
 
         self.curs = conn.cursor()
