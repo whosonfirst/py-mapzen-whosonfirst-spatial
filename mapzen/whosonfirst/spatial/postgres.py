@@ -7,6 +7,7 @@ import os
 import logging
 import json
 import subprocess
+import time
 
 # basically if you're going to have to install psycopg2 then installing
 # shapely shouldn't be a big deal either... (20170502/thisisaaronland)
@@ -62,10 +63,17 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         params = tuple(params)
 
+        t1 = time.time()
+
         sql = "SELECT id, parent_id, placetype_id, meta, ST_AsGeoJSON(geom), ST_AsGeoJSON(centroid) FROM whosonfirst WHERE " + " AND " . join(where)
         logging.debug(sql)
 
         self.curs.execute(sql, params)
+
+        t2 = time.time()
+        ttx = t2 - t1
+
+        logging.debug("time to execute query (point-in-polygon for %s,%s) : %s" % (lat, lon, ttx))
 
         for row in self.curs.fetchall():
 
@@ -75,6 +83,9 @@ class postgis(mapzen.whosonfirst.spatial.base):
             yield row
         
     def intersects(self, feature, **kwargs):
+
+        props = feature["properties"]
+        wof_id = props["wof:id"]
 
         page = kwargs.get('page', 1)
         per_page = kwargs.get('per_page', 5000)
@@ -103,8 +114,15 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         logging.debug(sql)
 
+        t1 = time.time()
+
         self.curs.execute(sql, params)
 
+        t2 = time.time()
+        ttx = t2 - t1
+
+        logging.debug("time to execute query (find intersecting for %s): %s" % (wof_id, ttx))
+        
         for row in self.curs.fetchall():
 
             if kwargs.get("as_feature", False):
@@ -119,6 +137,9 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
     def intersects_paginated(self, feature, **kwargs):
 
+        props = feature["properties"]
+        wof_id = props["wof:id"]
+
         page = kwargs.get('page', 1)
         per_page = kwargs.get('per_page', 5000)
 
@@ -126,9 +147,17 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         sql = "SELECT COUNT(id) FROM whosonfirst WHERE " + " AND " . join(where)
 
+        t1 = time.time()
+
         logging.debug(sql)
 
         self.curs.execute(sql, params)
+
+        t2 = time.time()
+        ttx = t2 - t1
+
+        logging.debug("time to execute query (count intersecting for %s) : %s" % (wof_id, ttx))
+
         row = self.curs.fetchone()
 
         logging.debug("status %s" % self.curs.statusmessage)
