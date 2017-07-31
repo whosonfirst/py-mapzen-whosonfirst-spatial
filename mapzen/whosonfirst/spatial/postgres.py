@@ -193,7 +193,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
             try:
                 row = self.row_to_feature(row)
-            catch Exception, e:
+            except Exception, e:
                 logging.error("failed to convert row to feature")
                 return None
 
@@ -221,7 +221,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
             try:
                 tmp = self.row_to_feature(row)
-                catch Exception, e:
+            except Exception, e:
                 logging.error("failed to convert row to feature")
                 return None
 
