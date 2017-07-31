@@ -77,8 +77,10 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         for row in self.curs.fetchall():
 
-            if kwargs.get("as_feature", False):
-                row = self.row_to_feature(row)
+            row = self.inflate_row(row, **kwargs)
+
+            if not row:
+                continue
 
             yield row
         
@@ -125,13 +127,10 @@ class postgis(mapzen.whosonfirst.spatial.base):
         
         for row in self.curs.fetchall():
 
-            if kwargs.get("as_feature", False):
+            row = self.inflate_row(row, **kwargs)
 
-                try:
-                    row = self.row_to_feature(row)
-                except Exception, e:
-                    logging.error("failed to 'intersects' for %s because %s" % (row[0], e))
-                    continue
+            if not row:
+                continue
 
             yield row
 
@@ -187,6 +186,55 @@ class postgis(mapzen.whosonfirst.spatial.base):
                 yield row
 
             page += 1
+
+    def inflate_row(self, row, **kwargs):
+
+        if kwargs.get("as_feature", False):
+
+            try:
+                row = self.row_to_feature(row)
+            catch Exception, e:
+                logging.error("failed to convert row to feature")
+                return None
+
+            # pending https://github.com/whosonfirst/go-whosonfirst-pgis/issues/4
+            # wof:is_ceased is set in mz-wof-hierarchy and frankly is a confusing
+            # label but it means `WHERE is_ceased=0` and gets set in _where below
+            # it happen sometimes... maybe we will change it but not today
+            # (20170731/thisisaaronland)
+            
+            if kwargs.has_key("wof:is_ceased") and kwargs["wof:is_ceased"] == 0:
+                
+                cessation = row["properties"].get("edtf:cessation", "uuuu")
+                    
+                if cessation in ("", "u", "uuuu"):
+                    logging.debug("BANDAID record has been ceased, skipping")
+                    return None
+        
+        # pending https://github.com/whosonfirst/go-whosonfirst-pgis/issues/4
+        # wof:is_ceased is set in mz-wof-hierarchy and frankly is a confusing
+        # label but it means `WHERE is_ceased=0` and gets set in _where below
+        # it happen sometimes... maybe we will change it but not today
+        # (20170731/thisisaaronland)
+        
+        elif kwargs.has_key("wof:is_ceased") and kwargs["wof:is_ceased"] == 0:
+
+            try:
+                tmp = self.row_to_feature(row)
+                catch Exception, e:
+                logging.error("failed to convert row to feature")
+                return None
+
+            cessation = tmp["properties"].get("edtf:cessation", "uuuu")
+
+            if cessation in ("", "u", "uuuu"):
+                logging.debug("BANDAID record has been ceased, skipping")
+                return None
+
+        else:
+            pass
+
+        return None
 
     def index_feature(self, feature, **kwargs):
 
