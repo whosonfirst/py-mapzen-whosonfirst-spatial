@@ -74,6 +74,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         sql = "SELECT id, parent_id, placetype_id, meta, ST_AsGeoJSON(geom), ST_AsGeoJSON(centroid) FROM whosonfirst WHERE " + " AND " . join(where)
         logging.debug(sql)
+        logging.debug(params)		# we're going to assume dumping geom here is okay because it's a centroid
 
         self.curs.execute(sql, params)
 
@@ -87,6 +88,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
             row = self.inflate_row(row, **kwargs)
 
             if not row:
+                logging.debug("failed to inflate row")
                 continue
 
             yield row
@@ -241,7 +243,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
         else:
             pass
 
-        return None
+        return row
 
     def index_feature(self, feature, **kwargs):
 
