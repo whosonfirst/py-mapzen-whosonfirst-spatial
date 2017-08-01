@@ -60,7 +60,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
             # see notes in inflate_row (20170731/thisisaaronland)
 
             if k == "wof:is_ceased":
-                logging.debug("BANDAID drop wof:is_ceased from query")
+                logging.debug("[spatial][postgis][pip] BANDAID drop wof:is_ceased from query")
                 continue
 
             k = k.replace("wof:", "")
@@ -73,22 +73,21 @@ class postgis(mapzen.whosonfirst.spatial.base):
         t1 = time.time()
 
         sql = "SELECT id, parent_id, placetype_id, meta, ST_AsGeoJSON(geom), ST_AsGeoJSON(centroid) FROM whosonfirst WHERE " + " AND " . join(where)
-        logging.debug(sql)
-        logging.debug(params)		# we're going to assume dumping geom here is okay because it's a centroid
+        logging.debug("[spatial][postgis][pip] %s" % sql)
 
         self.curs.execute(sql, params)
 
         t2 = time.time()
         ttx = t2 - t1
 
-        logging.debug("time to execute query (point-in-polygon for %s,%s) : %s" % (lat, lon, ttx))
+        logging.debug("[spatial][postgis][pip] time to execute query (point-in-polygon for %s,%s) : %s" % (lat, lon, ttx))
 
         for row in self.curs.fetchall():
 
             row = self.inflate_row(row, **kwargs)
 
             if not row:
-                logging.debug("failed to inflate row")
+                logging.debug("[spatial][postgis][pip] failed to inflate row")
                 continue
 
             yield row
@@ -123,7 +122,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
         # https://www.postgresql.org/docs/9.6/static/queries-limit.html
         sql += " LIMIT %s OFFSET %s" % (per_page, offset)
 
-        logging.debug(sql)
+        logging.debug("[spatial][postgis][intersects] %s" % sql)
 
         t1 = time.time()
 
@@ -132,7 +131,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
         t2 = time.time()
         ttx = t2 - t1
 
-        logging.debug("time to execute query (find intersecting for %s): %s" % (wof_id, ttx))
+        logging.debug("[spatial][postgis][intersects] time to execute query (find intersecting for %s): %s" % (wof_id, ttx))
         
         for row in self.curs.fetchall():
 
@@ -157,14 +156,14 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         t1 = time.time()
 
-        logging.debug(sql)
+        logging.debug("[spatial][postgis][intersects_paginated] %s" % sql)
 
         self.curs.execute(sql, params)
 
         t2 = time.time()
         ttx = t2 - t1
 
-        logging.debug("time to execute query (count intersecting for %s) : %s" % (wof_id, ttx))
+        logging.debug("[spatial][postgis][intersects_paginated] time to execute query (count intersecting for %s) : %s" % (wof_id, ttx))
 
         row = self.curs.fetchone()
 
@@ -182,11 +181,11 @@ class postgis(mapzen.whosonfirst.spatial.base):
             page_count = math.ceil(count / per_page)
             page_count = int(page_count)
 
-        logging.info("count intersects: %s (%s pages (%s))" % (count, page_count, page))
+        logging.info("[spatial][postgis][intersects_paginated] count: %s (%s pages (%s))" % (count, page_count, page))
 
         while page <= page_count:
 
-            logging.info("%s results page %s/%s" % (count, page, page_count))
+            logging.info("[spatial][postgis][intersects_paginated] %s results page %s/%s" % (count, page, page_count))
 
             kwargs['per_page'] = per_page
             kwargs['page'] = page
@@ -203,7 +202,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
             try:
                 row = self.row_to_feature(row)
             except Exception, e:
-                logging.error("failed to convert row to feature")
+                logging.error("[spatial][postgis][inflate_row] failed to convert row to feature")
                 return None
 
             # pending https://github.com/whosonfirst/go-whosonfirst-pgis/issues/4
@@ -217,7 +216,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
                 cessation = row["properties"].get("edtf:cessation", "uuuu")
                     
                 if cessation in ("", "u", "uuuu"):
-                    logging.debug("BANDAID record has been ceased, skipping")
+                    logging.debug("[spatial][postgis][inflate_row] BANDAID record has been ceased, skipping")
                     return None
         
         # pending https://github.com/whosonfirst/go-whosonfirst-pgis/issues/4
@@ -231,13 +230,13 @@ class postgis(mapzen.whosonfirst.spatial.base):
             try:
                 tmp = self.row_to_feature(row)
             except Exception, e:
-                logging.error("failed to convert row to feature")
+                logging.error("[spatial][postgis][inflate_row] failed to convert row to feature")
                 return None
 
             cessation = tmp["properties"].get("edtf:cessation", "uuuu")
 
             if cessation in ("", "u", "uuuu"):
-                logging.debug("BANDAID record has been ceased, skipping")
+                logging.debug("[spatial][postgis][inflate_row] BANDAID record has been ceased, skipping")
                 return None
 
         else:
@@ -367,12 +366,12 @@ class postgis(mapzen.whosonfirst.spatial.base):
             # see notes in inflate_row (20170731/thisisaaronland)
 
             if k == "wof:is_ceased":
-                logging.debug("BANDAID drop wof:is_ceased from query")
+                logging.debug("[spatial][postgis][where] BANDAID drop wof:is_ceased from query")
                 continue
 
             k = k.replace("wof:", "")
 
-            logging.debug("filter %s=%s" % (k, v))
+            logging.debug("[spatial][postgis][where] %s=%s" % (k, v))
 
             where.append("%s=" % k + "%s")
             params.append(v)
@@ -390,7 +389,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
             try:
                 geom = json.loads(geom)
             except Exception, e:
-                logging.warning("failed to parse geom (%s) for %s, because %s" % (geom, wofid, e))
+                logging.warning("[spatial][postgis][row_to_feature] failed to parse geom (%s) for %s, because %s" % (geom, wofid, e))
 
         if centroid:
 
@@ -398,11 +397,11 @@ class postgis(mapzen.whosonfirst.spatial.base):
                 centroid = json.loads(centroid)
                 lon, lat = centroid['coordinates']
             except Exception, e:
-                logging.warning("failed to parse centroid (%s) for %s, because %s" % (centroid, wofid, e))
+                logging.warning("[spatial][postgis][row_to_feature] failed to parse centroid (%s) for %s, because %s" % (centroid, wofid, e))
 
         if not geom and not centroid:
 
-            logging.error("can't parse either geom or centroid xxxx")
+            logging.error("[spatial][postgis][row_to_feature] can't parse either geom or centroid xxxx for %s" % wofid)
             raise Exception, "bunk geometry for %s" % wofid
 
         if not geom:
