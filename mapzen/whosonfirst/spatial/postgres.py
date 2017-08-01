@@ -56,6 +56,13 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         for k, v in filters.items():
 
+            # pending https://github.com/whosonfirst/go-whosonfirst-pgis/issues/4
+            # see notes in inflate_row (20170731/thisisaaronland)
+
+            if k == "wof:is_ceased":
+                logging.debug("BANDAID drop wof:is_ceased from query")
+                continue
+
             k = k.replace("wof:", "")
 
             where.append("%s=" % k + "%s")
