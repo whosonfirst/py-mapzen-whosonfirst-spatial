@@ -286,10 +286,12 @@ class postgis(mapzen.whosonfirst.spatial.base):
             path
         ])
     
-        logging.info(" ".join(cmd))
+        logging.info("[spatial][postgis][index] %s" % " ".join(cmd))
         
         out = subprocess.check_output(cmd)
-        logging.debug(out)
+
+        if out:
+            logging.debug("[spatial][postgis][index] %s" % out)
 
         return repo
 
