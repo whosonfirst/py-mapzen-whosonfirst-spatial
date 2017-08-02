@@ -197,6 +197,21 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
     def inflate_row(self, row, **kwargs):
 
+        logging.debug("[spatial][postgis][inflate_row] %s" % kwargs)
+
+        # BANDAID WARNING
+
+        # pending https://github.com/whosonfirst/go-whosonfirst-pgis/issues/4
+        # wof:is_ceased is set in mz-wof-hierarchy and frankly is a confusing
+        # label but it means `WHERE is_ceased=0` and gets set in _where below
+        # it happen sometimes... maybe we will change it but not today
+        # (20170731/thisisaaronland)
+
+        filters = kwargs.get("filters", {})
+
+        logging.error("[spatial][postgis][inflate_row] BANDAID has wof:is_ceased: %s" % filters.has_key("wof:is_ceased"))
+        logging.error("[spatial][postgis][inflate_row] BANDAID is wof:is_ceased == 0: %s ('%s')" % (filters.get("wof:is_ceased", None) == 0, filters.get("wof:is_ceased", None)))
+
         if kwargs.get("as_feature", False):
 
             try:
@@ -205,37 +220,60 @@ class postgis(mapzen.whosonfirst.spatial.base):
                 logging.error("[spatial][postgis][inflate_row] failed to convert row to feature")
                 return None
 
-            # pending https://github.com/whosonfirst/go-whosonfirst-pgis/issues/4
-            # wof:is_ceased is set in mz-wof-hierarchy and frankly is a confusing
-            # label but it means `WHERE is_ceased=0` and gets set in _where below
-            # it happen sometimes... maybe we will change it but not today
-            # (20170731/thisisaaronland)
-            
-            if kwargs.has_key("wof:is_ceased") and kwargs["wof:is_ceased"] == 0:
-                
-                cessation = row["properties"].get("edtf:cessation", "uuuu")
+            # BANDAID - see above
+
+            if filters.has_key("wof:is_ceased") and filters["wof:is_ceased"] == 0:
+
+                wofid = row["properties"]["wof:id"]
+
+                try:
+
+                    data_root = kwargs.get("data_root", "/usr/local/data")
+                    repo = row["properties"]["wof:repo"]                    
+                    root = os.path.join(data_root, repo)
+                    data = os.path.join(root, "data")
                     
-                if cessation in ("", "u", "uuuu"):
-                    logging.debug("[spatial][postgis][inflate_row] BANDAID record has been ceased, skipping")
+                    f = mapzen.whosonfirst.utils.load(data, wofid)
+
+                except Exception, e:
+                    logging.error("[spatial][postgis][inflate_row] BANDAID failed to load feature (%s) from source" % wofid)
+                    return None
+
+                cessation = f["properties"].get("edtf:cessation", "uuuu")
+                logging.error("[spatial][postgis][inflate_row] BANDAID cessation for %s is '%s'" % (wofid, cessation))
+
+                if not cessation in ("", "u", "uuuu"):
+                    logging.debug("[spatial][postgis][inflate_row] BANDAID record %s has been ceased, skipping" % wofid)
                     return None
         
-        # pending https://github.com/whosonfirst/go-whosonfirst-pgis/issues/4
-        # wof:is_ceased is set in mz-wof-hierarchy and frankly is a confusing
-        # label but it means `WHERE is_ceased=0` and gets set in _where below
-        # it happen sometimes... maybe we will change it but not today
-        # (20170731/thisisaaronland)
+        # BANDAID - see above
         
-        elif kwargs.has_key("wof:is_ceased") and kwargs["wof:is_ceased"] == 0:
+        elif filters.has_key("wof:is_ceased") and filters["wof:is_ceased"] == 0:
 
             try:
                 tmp = self.row_to_feature(row)
             except Exception, e:
-                logging.error("[spatial][postgis][inflate_row] failed to convert row to feature")
+                logging.error("[spatial][postgis][inflate_row] BANDAID failed to convert row to feature")
                 return None
 
-            cessation = tmp["properties"].get("edtf:cessation", "uuuu")
+            wofid = tmp["properties"]["wof:id"]
 
-            if cessation in ("", "u", "uuuu"):
+            try:
+
+                data_root = kwargs.get("data_root", "/usr/local/data")                
+                repo = tmp["properties"]["wof:repo"]                    
+                root = os.path.join(data_root, repo)
+                data = os.path.join(root, "data")
+                
+                f = mapzen.whosonfirst.utils.load(data, wofid)
+
+            except Exception, e:
+                logging.error("[spatial][postgis][inflate_row] BANDAID failed to load feature (%s) from source" % wofid)
+                return None
+                
+            cessation = f["properties"].get("edtf:cessation", "uuuu")
+
+            if not cessation in ("", "u", "uuuu"):
                 logging.debug("[spatial][postgis][inflate_row] BANDAID record has been ceased, skipping")
                 return None
 
