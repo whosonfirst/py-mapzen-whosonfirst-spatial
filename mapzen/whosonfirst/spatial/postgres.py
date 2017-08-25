@@ -37,6 +37,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
 
         conn = psycopg2.connect(dsn)
 
+        self.conn = conn
         self.curs = conn.cursor()
 
     def point_in_polygon(self, lat, lon, **kwargs):
@@ -75,7 +76,22 @@ class postgis(mapzen.whosonfirst.spatial.base):
         sql = "SELECT id, parent_id, placetype_id, meta, ST_AsGeoJSON(geom), ST_AsGeoJSON(centroid) FROM whosonfirst WHERE " + " AND " . join(where)
         logging.debug("[spatial][postgis][pip] %s with args: %s" % (sql, list(params)))
 
-        self.curs.execute(sql, params)
+        """
+        because sometimes this happens... 
+        see also: https://whosonfirst.mapzen.com/spelunker/id/136253037
+        not convinced this is the problem but it's a good possibility...
+        (20170824/thisisaaronland)
+
+        DEBUG:root:[spatial][postgis][pip] SELECT id, parent_id, placetype_id, meta, ST_AsGeoJSON(geom), ST_AsGeoJSON(centroid) FROM whosonfirst WHERE ST_Intersects(geom, ST_GeomFromGeoJSON(%s)) AND is_superseded=%s AND is_deprecated=%s AND placetype_id=%s with args: ['{"type": "Point", "coordinates": [7.509687, 46.730219]}', 0, 0, '102312335']
+ERROR:root:query failed, because BOOM! Could not generate outside point!
+        """
+
+        try:
+            self.curs.execute(sql, params)
+        except Exception, e:
+            self.conn.rollback()
+            logging.error("query failed, because %s" % e)
+            return
 
         t2 = time.time()
         ttx = t2 - t1
