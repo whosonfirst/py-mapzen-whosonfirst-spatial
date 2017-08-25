@@ -73,7 +73,7 @@ class postgis(mapzen.whosonfirst.spatial.base):
         t1 = time.time()
 
         sql = "SELECT id, parent_id, placetype_id, meta, ST_AsGeoJSON(geom), ST_AsGeoJSON(centroid) FROM whosonfirst WHERE " + " AND " . join(where)
-        logging.debug("[spatial][postgis][pip] %s" % sql)
+        logging.debug("[spatial][postgis][pip] %s with args: %s" % (sql, list(params)))
 
         self.curs.execute(sql, params)
 
