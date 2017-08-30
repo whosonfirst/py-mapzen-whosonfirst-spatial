@@ -33,10 +33,13 @@ class pip (mapzen.whosonfirst.spatial.base):
             pt = mapzen.whosonfirst.placetypes.placetype(filters["wof:placetype_id"])
             params["placetype"] = str(pt)
 
+        if kwargs.get("extras", None):
+            params["extras"] = kwargs["extras"]
+
         endpoint = "%s://%s" % (self.scheme, self.hostname)
 
         if self.port:
-            endpoint = "%s:%s" % (endpoint, self.port)        
+            endpoint = "%s:%s" % (endpoint, self.port)
 
         try:
 
