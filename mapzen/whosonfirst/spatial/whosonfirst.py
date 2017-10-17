@@ -88,7 +88,7 @@ class api (mapzen.whosonfirst.spatial.base):
 
         mapzen.whosonfirst.spatial.base.__init__(self, **kwargs)
 
-        self.endpoint = kwargs.get('endpoint', 'http://whosonfirst-api.mapzen.com')
+        self.endpoint = kwargs.get('endpoint', 'https://places.mapzen.com/v1')
         self.api_key = kwargs.get('api_key', None)
 
         self.data_root = kwargs.get("data_root", "https://whosonfirst.mapzen.com")
