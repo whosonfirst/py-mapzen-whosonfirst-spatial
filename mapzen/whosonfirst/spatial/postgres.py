@@ -311,12 +311,17 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
             raise Exception, "You forgot to set data_root in the constructor"
 
         props = feature["properties"]
-        repo = props["wof:repo"]
+        wofid = props["wof:id"]
+
+        repo = props.get("wof:repo", None)
+
+        if repo == None:
+            logging.error("%s is missing a wof:repo property" % wofid)
+            raise Exception, "Missing wof:repo property"
 
         root = os.path.join(data_root, repo)
         data = os.path.join(root, "data")
-
-        wofid = props["wof:id"]
+        
         path = mapzen.whosonfirst.uri.id2abspath(data, wofid)
 
         cmd = [
