@@ -174,7 +174,12 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
 
         logging.debug("[spatial][postgis][intersects_paginated] %s" % sql)
 
-        self.curs.execute(sql, params)
+        try:
+            self.curs.execute(sql, params)
+        except Exception, e:
+            self.conn.rollback()
+            logging.error("query failed, because %s" % e)
+            return
 
         t2 = time.time()
         ttx = t2 - t1
