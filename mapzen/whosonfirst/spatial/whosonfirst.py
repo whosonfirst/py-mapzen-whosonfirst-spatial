@@ -43,6 +43,7 @@ class pip (mapzen.whosonfirst.spatial.base):
             rsp = requests.get(endpoint, params=params)
 
             if rsp.status_code != requests.codes.ok:
+                logging.warning(rsp.content)
                 rsp.raise_for_status()
 
             data = json.loads(rsp.content)
