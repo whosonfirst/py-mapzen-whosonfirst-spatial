@@ -1,6 +1,3 @@
-# THIS IS WET PAINT AND PROBABLY DOESN'T WORK YET
-# (20180416/thisisaaronland)
-
 import mapzen.whosonfirst.spatial
 import time
 import logging
@@ -11,20 +8,16 @@ import mapzen.whosonfirst.utils
 import os
 import math
 import subprocess
-import edtf
 
 class spatialite(mapzen.whosonfirst.spatial.base):
 
     def __init__(self, **kwargs):
-
+        
+        #read in sqlite dump directly
         dsn = kwargs.get("dsn", "/Users/stephen.epps/Desktop/sqlite-db/whosonfirst-data-latest.db")
         conn = sqlite3.connect(dsn)
-
         conn.enable_load_extension(True)
-
         conn.execute('SELECT load_extension("mod_spatialite.dylib")')
-        # if we load a real DB we don't need to init it
-        #conn.execute('SELECT InitSpatialMetaData();')
 
         self.conn = conn
         self.curs = conn.cursor()
@@ -93,7 +86,6 @@ class spatialite(mapzen.whosonfirst.spatial.base):
             sql += " OR parent_id=%s"
 
             # OMG SO DUMB...
-
             params = list(params)
             params.append(filters["wof:parent_id"])
             params = tuple(params)
@@ -111,7 +103,7 @@ class spatialite(mapzen.whosonfirst.spatial.base):
         ttx = t2 - t1
 
         logging.debug("[spatial][postgis][intersects] time to execute query (find intersecting for %s): %s" % (wof_id, ttx))
-        
+
         for row in self.curs.fetchall():
 
             row = self.inflate_row(row, **kwargs)
@@ -154,7 +146,6 @@ class spatialite(mapzen.whosonfirst.spatial.base):
         logging.debug("status %s" % self.curs.statusmessage)
 
         count = row[0]
-
         page_count = 1
 
         if count > per_page:
@@ -175,15 +166,16 @@ class spatialite(mapzen.whosonfirst.spatial.base):
             kwargs['page'] = page
 
             for row in self.intersects(feature, **kwargs):
+
                 yield row
 
             page += 1
 
     def row_to_feature(self, row, **kwargs):
+
         wofid = row["properties"]["wof:id"]
         parent_id = row["properties"]["wof:parent_id"]
         centroid = [ row["properties"]["geom:longitude"], row["properties"]["geom:latitude"] ]
-
         props = row["properties"]
 
         if row["geometry"]:
@@ -204,6 +196,7 @@ class spatialite(mapzen.whosonfirst.spatial.base):
             raise Exception, "bunk geometry for %s" % wofid
 
         if not geom:
+
             geom = centroid
 
         if not centroid:
@@ -302,9 +295,6 @@ class spatialite(mapzen.whosonfirst.spatial.base):
         return where, tuple(params)
  
     def index_feature(self, feature, **kwargs):
-
-        # please implement me in python below... maybe?
-        # (20170503/thisisaaronland)
 
         index_tool = kwargs.get("index_tool", "/usr/local/bin/wof-pgis-index")
         data_root = kwargs.get("data_root", None)
