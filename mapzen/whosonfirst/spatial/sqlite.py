@@ -6,6 +6,12 @@ import time
 import logging
 import sqlite3
 import json
+import mapzen.whosonfirst.hierarchy
+import mapzen.whosonfirst.utils
+import os
+import math
+import subprocess
+import edtf
 
 class spatialite(mapzen.whosonfirst.spatial.base):
 
@@ -20,6 +26,7 @@ class spatialite(mapzen.whosonfirst.spatial.base):
         # if we load a real DB we don't need to init it
         #conn.execute('SELECT InitSpatialMetaData();')
 
+        self.conn = conn
         self.curs = conn.cursor()
 
     def point_in_polygon(self, lat, lon, **kwargs):
@@ -65,10 +72,112 @@ class spatialite(mapzen.whosonfirst.spatial.base):
         return feature
         
     def intersects(self, feature, **kwargs):
-        raise Exception, "Method 'row_to_feature' not implemented by this class."
+
+        props = feature["properties"]
+        wof_id = props["wof:id"]
+
+        page = kwargs.get('page', 1)
+        per_page = kwargs.get('per_page', 5000)
+
+        offset = (page - 1) * per_page
+
+        where, params = self._where(feature, **kwargs)
+
+        sql = "SELECT id, parent_id, placetype_id, meta, ST_AsGeoJSON(geom), ST_AsGeoJSON(centroid) FROM whosonfirst WHERE " + " AND " . join(where)
+
+        # OMG PLEASE MAKE THIS BETTER SOMEHOW...
+
+        filters = kwargs.get("filters", {})
+
+        if filters.get("wof:parent_id", None):
+            sql += " OR parent_id=%s"
+
+            # OMG SO DUMB...
+
+            params = list(params)
+            params.append(filters["wof:parent_id"])
+            params = tuple(params)
+
+        # https://www.postgresql.org/docs/9.6/static/queries-limit.html
+        sql += " LIMIT %s OFFSET %s" % (per_page, offset)
+
+        logging.debug("[spatial][postgis][intersects] %s" % sql)
+
+        t1 = time.time()
+
+        self.curs.execute(sql, params)
+
+        t2 = time.time()
+        ttx = t2 - t1
+
+        logging.debug("[spatial][postgis][intersects] time to execute query (find intersecting for %s): %s" % (wof_id, ttx))
+        
+        for row in self.curs.fetchall():
+
+            row = self.inflate_row(row, **kwargs)
+
+            if not row:
+                continue
+
+            yield row
 
     def intersects_paginated(self, feature, **kwargs):
-        raise Exception, "Method 'row_to_feature' not implemented by this class."
+
+        props = feature["properties"]
+        wof_id = props["wof:id"]
+
+        page = kwargs.get('page', 1)
+        per_page = kwargs.get('per_page', 5000)
+
+        where, params = self._where(feature, **kwargs)
+
+        sql = "SELECT COUNT(id) FROM whosonfirst WHERE " + " AND " . join(where)
+
+        t1 = time.time()
+
+        logging.debug("[spatial][postgis][intersects_paginated] %s" % sql)
+
+        try:
+            self.curs.execute(sql, params)
+        except Exception, e:
+            self.conn.rollback()
+            logging.error("query failed, because %s" % e)
+            return
+
+        t2 = time.time()
+        ttx = t2 - t1
+
+        logging.debug("[spatial][postgis][intersects_paginated] time to execute query (count intersecting for %s) : %s" % (wof_id, ttx))
+
+        row = self.curs.fetchone()
+
+        logging.debug("status %s" % self.curs.statusmessage)
+
+        count = row[0]
+
+        page_count = 1
+
+        if count > per_page:
+
+            count = float(count)
+            per_page = float(per_page)
+
+            page_count = math.ceil(count / per_page)
+            page_count = int(page_count)
+
+        logging.info("[spatial][postgis][intersects_paginated] count: %s (%s pages (%s))" % (count, page_count, page))
+
+        while page <= page_count:
+
+            logging.info("[spatial][postgis][intersects_paginated] %s results page %s/%s" % (count, page, page_count))
+
+            kwargs['per_page'] = per_page
+            kwargs['page'] = page
+
+            for row in self.intersects(feature, **kwargs):
+                yield row
+
+            page += 1
 
     def row_to_feature(self, row, **kwargs):
         wofid = row["properties"]["wof:id"]
@@ -107,5 +216,144 @@ class spatialite(mapzen.whosonfirst.spatial.base):
 
         return { 'type': 'Feature', 'geometry': geom, 'properties': props }
 
+    def _where (self, feature, **kwargs): 
+
+        where = []
+        params = []
+
+        # because venues
+
+        if kwargs.get('use_centroid', False):
+
+            geom = feature['geometry']
+            str_geom = json.dumps(geom)
+            
+            if kwargs.get("buffer", None):
+
+                where = [
+                    "ST_Intersects(ST_Buffer(ST_GeomFromGeoJSON(%s)," + str(kwargs.get("buffer")) + "), centroid)",
+                ]
+
+            else:
+
+                where = [
+                    "ST_Intersects(ST_GeomFromGeoJSON(%s), centroid)",
+                ]
+
+            params = [
+                str_geom
+            ]            
+
+        else:
+
+            geom = feature['geometry']
+            str_geom = json.dumps(geom)
+
+            params = [
+                str_geom
+            ]
+
+            if kwargs.get("check_centroid", None) and kwargs.get("buffer", None):
+
+                where = [
+                    "(ST_Intersects(ST_Buffer(ST_GeomFromGeoJSON(%s), " + str(kwargs.get("buffer")) + "), geom) OR ST_Intersects(ST_Buffer(ST_GeomFromGeoJSON(%s), " + str(kwargs.get("buffer")) + "), geom))"
+                ]
+
+                params.append(str_geom)
+
+            elif kwargs.get("check_centroid", None):
+
+                where = [
+                    "(ST_Intersects(ST_GeomFromGeoJSON(%s), geom) OR ST_Intersects(ST_GeomFromGeoJSON(%s), centroid))",
+                ]
+
+                params.append(str_geom)
+
+            elif kwargs.get("buffer", None):
+
+                where = [
+                    "ST_Intersects(ST_Buffer(ST_GeomFromGeoJSON(%s), " + str(kwargs.get("buffer")) + "), geom)",
+                ]
+
+            else:
+
+                where = [
+                    "ST_Intersects(ST_GeomFromGeoJSON(%s), geom)",
+                ]
+
+        filters = kwargs.get("filters", {})
+
+        for k, v in filters.items():
+
+            # pending https://github.com/whosonfirst/go-whosonfirst-pgis/issues/4
+            # see notes in inflate_row (20170731/thisisaaronland)
+
+            if k == "wof:is_ceased":
+                logging.debug("[spatial][postgis][where] BANDAID drop wof:is_ceased from query")
+                continue
+
+            k = k.replace("wof:", "")
+
+            logging.debug("[spatial][postgis][where] %s=%s" % (k, v))
+
+            where.append("%s=" % k + "%s")
+            params.append(v)
+
+        return where, tuple(params)
+ 
     def index_feature(self, feature, **kwargs):
-        raise Exception, "Method 'index_feature' not implemented by this class."
+
+        # please implement me in python below... maybe?
+        # (20170503/thisisaaronland)
+
+        index_tool = kwargs.get("index_tool", "/usr/local/bin/wof-pgis-index")
+        data_root = kwargs.get("data_root", None)
+        debug = kwargs.get("debug", False)
+
+        if data_root == None:
+            raise Exception, "You forgot to set data_root in the constructor"
+
+        props = feature["properties"]
+        wofid = props["wof:id"]
+
+        repo = props.get("wof:repo", None)
+
+        if repo == None:
+            logging.error("%s is missing a wof:repo property" % wofid)
+            raise Exception, "Missing wof:repo property"
+
+        root = os.path.join(data_root, repo)
+        data = os.path.join(root, "data")
+        
+        path = mapzen.whosonfirst.uri.id2abspath(data, wofid)
+
+        cmd = [
+            index_tool,
+            "-pgis-database", self.pg_database,
+            "-pgis-host", self.pg_host,
+            "-pgis-user", self.pg_username,
+        ]
+
+        if self.pg_password:
+
+            cmd.extend([
+                "-pgis-password", self.pg_password
+            ])
+        
+        if debug:
+            cmd.append("-debug")
+
+        cmd.extend([
+            "-mode", "files",
+            path
+        ])
+    
+        logging.info("[spatial][postgis][index] %s" % " ".join(cmd))
+        
+        out = subprocess.check_output(cmd)
+
+        if out:
+            logging.debug("[spatial][postgis][index] %s" % out)
+
+        return repo
+
