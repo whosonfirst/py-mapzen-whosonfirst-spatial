@@ -35,6 +35,20 @@ class pip (mapzen.whosonfirst.spatial.base):
             pt = mapzen.whosonfirst.placetypes.placetype(filters["wof:placetype_id"])
             params["placetype"] = str(pt)
 
+        existential = (
+            "wof:is_supersedes",
+            "wof:is_deprecated",
+            "wof:is_ceased",
+            "wof:is_current",
+        )
+
+        for flag in existential:
+
+            if filters.get(flag, None) != None:
+
+                param = flag.replace("wof:", "")
+                params[param] = filters[flag]
+
         endpoint = "%s://%s" % (self.scheme, self.hostname)
 
         if self.port:
@@ -103,6 +117,20 @@ class api (mapzen.whosonfirst.spatial.base):
         if filters.get("wof:placetype_id", None):
             pt = mapzen.whosonfirst.placetypes.placetype(filters["wof:placetype_id"])
             params["placetype"] = str(pt)
+
+        existential = (
+            "wof:is_superseded",
+            "wof:is_deprecated",
+            "wof:is_ceased",
+            "wof:is_current",
+        )
+
+        for flag in existential:
+
+            if filters.get(flag, None) != None:
+
+                param = flag.replace("wof:", "")
+                params[param] = filters[flag]
 
         if kwargs.get("extras", None):
             params["extras"] = kwargs["extras"]
