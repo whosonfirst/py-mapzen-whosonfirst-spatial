@@ -22,6 +22,7 @@ setup(
     name='mapzen.whosonfirst.spatial',
     namespace_packages=['mapzen', 'mapzen.whosonfirst'],
     version=version,
+    python_requires='>3',
     description='Simple Python wrapper for Who\'s On First spatial functionality',
     author='Mapzen',
     url='https://github.com/whosonfirst/py-mapzen-whosonfirst-spatial',

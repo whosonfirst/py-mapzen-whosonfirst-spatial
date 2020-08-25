@@ -88,7 +88,7 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
 
         try:
             self.curs.execute(sql, params)
-        except Exception, e:
+        except Exception as e:
             self.conn.rollback()
             logging.error("query failed, because %s" % e)
             return
@@ -176,7 +176,7 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
 
         try:
             self.curs.execute(sql, params)
-        except Exception, e:
+        except Exception as e:
             self.conn.rollback()
             logging.error("query failed, because %s" % e)
             return
@@ -237,7 +237,7 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
 
             try:
                 row = self.row_to_feature(row)
-            except Exception, e:
+            except Exception as e:
                 logging.error("[spatial][postgis][inflate_row] failed to convert row to feature")
                 return None
 
@@ -256,7 +256,7 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
                     
                     f = mapzen.whosonfirst.utils.load(data, wofid)
 
-                except Exception, e:
+                except Exception as e:
                     logging.error("[spatial][postgis][inflate_row] BANDAID failed to load feature (%s) from source" % wofid)
                     return None
 
@@ -273,7 +273,7 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
 
             try:
                 tmp = self.row_to_feature(row)
-            except Exception, e:
+            except Exception as e:
                 logging.error("[spatial][postgis][inflate_row] BANDAID failed to convert row to feature")
                 return None
 
@@ -288,7 +288,7 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
                 
                 f = mapzen.whosonfirst.utils.load(data, wofid)
 
-            except Exception, e:
+            except Exception as e:
                 logging.error("[spatial][postgis][inflate_row] BANDAID failed to load feature (%s) from source" % wofid)
                 return None
                 
@@ -313,7 +313,7 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
         debug = kwargs.get("debug", False)
 
         if data_root == None:
-            raise Exception, "You forgot to set data_root in the constructor"
+            raise Exception("You forgot to set data_root in the constructor")
 
         props = feature["properties"]
         wofid = props["wof:id"]
@@ -322,7 +322,7 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
 
         if repo == None:
             logging.error("%s is missing a wof:repo property" % wofid)
-            raise Exception, "Missing wof:repo property"
+            raise Exception("Missing wof:repo property")
 
         root = os.path.join(data_root, repo)
         data = os.path.join(root, "data")
@@ -454,7 +454,7 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
 
             try:
                 geom = json.loads(geom)
-            except Exception, e:
+            except Exception as e:
                 logging.warning("[spatial][postgis][row_to_feature] failed to parse geom (%s) for %s, because %s" % (geom, wofid, e))
 
         if centroid:
@@ -462,13 +462,13 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
             try:
                 centroid = json.loads(centroid)
                 lon, lat = centroid['coordinates']
-            except Exception, e:
+            except Exception as e:
                 logging.warning("[spatial][postgis][row_to_feature] failed to parse centroid (%s) for %s, because %s" % (centroid, wofid, e))
 
         if not geom and not centroid:
 
             logging.error("[spatial][postgis][row_to_feature] can't parse either geom or centroid xxxx for %s" % wofid)
-            raise Exception, "bunk geometry for %s" % wofid
+            raise Exception("bunk geometry for %s" % wofid)
 
         if not geom:
             geom = centroid

@@ -64,10 +64,10 @@ class pip (mapzen.whosonfirst.spatial.base):
 
             data = json.loads(rsp.content)
 
-        except Exception, e:
+        except Exception as e:
 
             logging.error("failed to PIP with %s (%s) because %s" % (endpoint, params, e))
-            raise Exception, e
+            raise Exception(e)
 
         for row in data:
 
@@ -147,10 +147,10 @@ class api (mapzen.whosonfirst.spatial.base):
 
             data = json.loads(rsp.content)
 
-        except Exception, e:
+        except Exception as e:
 
             logging.error("failed to PIP with %s (%s) because %s" % (self.endpoint, params, e))
-            raise Exception, e
+            raise Exception(e)
 
         for row in data["places"] :
 
