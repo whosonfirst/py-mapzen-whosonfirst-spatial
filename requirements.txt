@@ -2,3 +2,4 @@ git+https://github.com/whosonfirst/py-mapzen-whosonfirst-placetypes
 git+https://github.com/whosonfirst/py-mapzen-whosonfirst-uri
 git+https://github.com/whosonfirst/py-mapzen-whosonfirst-utils
 requests
+psycopg2
