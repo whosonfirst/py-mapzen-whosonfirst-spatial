@@ -230,7 +230,7 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
 
         filters = kwargs.get("filters", {})
 
-        logging.error("[spatial][postgis][inflate_row] BANDAID has wof:is_ceased: %s" % filters.has_key("wof:is_ceased"))
+        logging.error("[spatial][postgis][inflate_row] BANDAID has wof:is_ceased: %s" % "wof:is_ceased" in filters)
         logging.error("[spatial][postgis][inflate_row] BANDAID is wof:is_ceased == 0: %s ('%s')" % (filters.get("wof:is_ceased", None) == 0, filters.get("wof:is_ceased", None)))
 
         if kwargs.get("as_feature", False):
@@ -243,7 +243,7 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
 
             # BANDAID - see above
 
-            if filters.has_key("wof:is_ceased") and filters["wof:is_ceased"] == 0:
+            if "wof:is_ceased" in filters and filters["wof:is_ceased"] == 0:
 
                 wofid = row["properties"]["wof:id"]
 
@@ -269,7 +269,7 @@ ERROR:root:query failed, because BOOM! Could not generate outside point!
         
         # BANDAID - see above
         
-        elif filters.has_key("wof:is_ceased") and filters["wof:is_ceased"] == 0:
+        elif "wof:is_ceased" in filters and filters["wof:is_ceased"] == 0:
 
             try:
                 tmp = self.row_to_feature(row)
